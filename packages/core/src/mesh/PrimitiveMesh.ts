@@ -1,12 +1,7 @@
-import { Engine } from "../Engine";
-import { Buffer } from "../graphic/Buffer";
-import { BufferBindFlag } from "../graphic/enums/BufferBindFlag";
-import { BufferUsage } from "../graphic/enums/BufferUsage";
-import { IndexFormat } from "../graphic/enums/IndexFormat";
-import { VertexElementFormat } from "../graphic/enums/VertexElementFormat";
-import { Mesh } from "../graphic/Mesh";
-import { VertexElement } from "../graphic/VertexElement";
+import { Vector2, Vector3 } from "@oasis-engine/math";
 import { GLCapabilityType } from "../base/Constant";
+import { Engine } from "../Engine";
+import { ModelMesh } from "./ModelMesh";
 
 /**
  * Used to generate common primitve meshes.
@@ -20,21 +15,24 @@ export class PrimitiveMesh {
    * @param engine - Engine
    * @param radius - Sphere radius
    * @param segments - Number of segments
+   * @param noLongerAccessible - Whether to access data later. If true, you'll never access data anymore (free memory cache)
    * @returns Sphere mesh
    */
-  static createSphere(engine: Engine, radius: number = 0.5, segments: number = 12): Mesh {
-    const mesh = new Mesh(engine);
+  static createSphere(
+    engine: Engine,
+    radius: number = 0.5,
+    segments: number = 12,
+    noLongerAccessible: boolean = true
+  ): ModelMesh {
+    const mesh = new ModelMesh(engine, "sphereModelMesh");
     segments = Math.max(2, Math.floor(segments));
 
     const count = segments + 1;
     const vertexCount = count * count;
-    const vertices = new Float32Array(vertexCount * 8);
     const rectangleCount = segments * segments;
     let indices: Uint16Array | Uint32Array = null;
-    let useUint32: boolean = false;
     if (vertexCount > PrimitiveMesh._uint16VertexLimit) {
-      if (engine._hardwareRenderer.canIUse(GLCapabilityType.elementIndexUint)) {
-        useUint32 = true;
+      if (engine.renderhardware.canIUse(GLCapabilityType.elementIndexUint)) {
         indices = new Uint32Array(rectangleCount * 6);
       } else {
         throw Error("The vertex count is over limit.");
@@ -46,6 +44,10 @@ export class PrimitiveMesh {
     const alphaRange = thetaRange * 2;
     const countReciprocal = 1.0 / count;
     const segmentsReciprocal = 1.0 / segments;
+
+    const positions: Vector3[] = [];
+    const normals: Vector3[] = [];
+    const uvs: Vector2[] = [];
 
     let offset = 0;
     for (let i = 0; i < vertexCount; ++i) {
@@ -62,16 +64,11 @@ export class PrimitiveMesh {
       let posZ = radius * Math.sin(alphaDelta) * sinTheta;
 
       // Position
-      vertices[offset++] = posX;
-      vertices[offset++] = posY;
-      vertices[offset++] = posZ;
+      positions[offset] = new Vector3(posX, posY, posZ);
       // Normal
-      vertices[offset++] = posX;
-      vertices[offset++] = posY;
-      vertices[offset++] = posZ;
+      normals[offset] = new Vector3(posX, posY, posZ);
       // Texcoord
-      vertices[offset++] = u;
-      vertices[offset++] = v;
+      uvs[offset++] = new Vector2(u, v);
     }
 
     offset = 0;
@@ -92,11 +89,17 @@ export class PrimitiveMesh {
       indices[offset++] = d;
     }
 
+    mesh.setPositions(positions);
+    mesh.setNormals(normals);
+    mesh.setUVs(uvs);
+    mesh.setIndices(indices);
+    mesh.addSubMesh(0, indices.length);
+    mesh.uploadData(noLongerAccessible);
+
     const { bounds } = mesh;
     bounds.min.setValue(-radius, -radius, -radius);
     bounds.max.setValue(radius, radius, radius);
 
-    PrimitiveMesh._initialize(engine, mesh, vertices, indices, useUint32);
     return mesh;
   }
 
@@ -106,48 +109,128 @@ export class PrimitiveMesh {
    * @param width - Cuboid width
    * @param height - Cuboid height
    * @param depth - Cuboid depth
+   * @param noLongerAccessible - Whether to access data later. If true, you'll never access data anymore (free memory cache)
    * @returns Cuboid mesh
    */
-  static createCuboid(engine: Engine, width: number = 1, height: number = 1, depth: number = 1): Mesh {
-    const mesh = new Mesh(engine);
+  static createCuboid(
+    engine: Engine,
+    width: number = 1,
+    height: number = 1,
+    depth: number = 1,
+    noLongerAccessible: boolean = true
+  ): ModelMesh {
+    const mesh = new ModelMesh(engine, "cuboidModelMesh");
 
     const halfWidth: number = width / 2;
     const halfHeight: number = height / 2;
     const halfDepth: number = depth / 2;
 
-    const vertices = new Float32Array(192);
+    const positions: Vector3[] = [];
+    const normals: Vector3[] = [];
+    const uvs: Vector2[] = [];
 
     // prettier-ignore
     // Up
-    vertices[0] = -halfWidth, vertices[1] = halfHeight, vertices[2] = -halfDepth, vertices[3] = 0, vertices[4] = 1, vertices[5] = 0, vertices[6] = 0, vertices[7] = 0,
-    vertices[8] = halfWidth, vertices[9] = halfHeight, vertices[10] = -halfDepth, vertices[11] = 0, vertices[12] = 1, vertices[13] = 0, vertices[14] = 1, vertices[15] = 0,
-    vertices[16] = halfWidth, vertices[17] = halfHeight, vertices[18] = halfDepth, vertices[19] = 0, vertices[20] = 1, vertices[21] = 0, vertices[22] = 1, vertices[23] = 1,
-    vertices[24] = -halfWidth, vertices[25] = halfHeight, vertices[26] = halfDepth, vertices[27] = 0, vertices[28] = 1, vertices[29] = 0, vertices[30] = 0, vertices[31] = 1,
+    positions[0] = new Vector3(-halfWidth, halfHeight, -halfDepth);
+    normals[0] = new Vector3(0, 1, 0);
+    uvs[0] = new Vector2(0, 0);
+
+    positions[1] = new Vector3(halfWidth, halfHeight, -halfDepth);
+    normals[1] = new Vector3(0, 1, 0);
+    uvs[1] = new Vector2(1, 0);
+
+    positions[2] = new Vector3(halfWidth, halfHeight, halfDepth);
+    normals[2] = new Vector3(0, 1, 0);
+    uvs[2] = new Vector2(1, 1);
+
+    positions[3] = new Vector3(-halfWidth, halfHeight, halfDepth);
+    normals[3] = new Vector3(0, 1, 0);
+    uvs[3] = new Vector2(0, 1);
+
     // Down
-    vertices[32] = -halfWidth, vertices[33] = -halfHeight, vertices[34] = -halfDepth, vertices[35] = 0, vertices[36] = -1, vertices[37] = 0, vertices[38] = 0, vertices[39] = 1,
-    vertices[40] = halfWidth, vertices[41] = -halfHeight, vertices[42] = -halfDepth, vertices[43] = 0, vertices[44] = -1, vertices[45] = 0, vertices[46] = 1, vertices[47] = 1,
-    vertices[48] = halfWidth, vertices[49] = -halfHeight, vertices[50] = halfDepth, vertices[51] = 0, vertices[52] = -1, vertices[53] = 0, vertices[54] = 1, vertices[55] = 0,
-    vertices[56] = -halfWidth, vertices[57] = -halfHeight, vertices[58] = halfDepth, vertices[59] = 0, vertices[60] = -1, vertices[61] = 0, vertices[62] = 0, vertices[63] = 0,
+    positions[4] = new Vector3(-halfWidth, -halfHeight, -halfDepth);
+    normals[4] = new Vector3(0, -1, 0);
+    uvs[4] = new Vector2(0, 1);
+
+    positions[5] = new Vector3(halfWidth, -halfHeight, -halfDepth);
+    normals[5] = new Vector3(0, -1, 0);
+    uvs[5] = new Vector2(1, 1);
+
+    positions[6] = new Vector3(halfWidth, -halfHeight, halfDepth);
+    normals[6] = new Vector3(0, -1, 0);
+    uvs[6] = new Vector2(1, 0);
+
+    positions[7] = new Vector3(-halfWidth, -halfHeight, halfDepth);
+    normals[7] = new Vector3(0, -1, 0);
+    uvs[7] = new Vector2(0, 0);
+
     // Left
-    vertices[64] = -halfWidth, vertices[65] = halfHeight, vertices[66] = -halfDepth, vertices[67] = -1, vertices[68] = 0, vertices[69] = 0, vertices[70] = 0, vertices[71] = 0,
-    vertices[72] = -halfWidth, vertices[73] = halfHeight, vertices[74] = halfDepth, vertices[75] = -1, vertices[76] = 0, vertices[77] = 0, vertices[78] = 1, vertices[79] = 0,
-    vertices[80] = -halfWidth, vertices[81] = -halfHeight, vertices[82] = halfDepth, vertices[83] = -1, vertices[84] = 0, vertices[85] = 0, vertices[86] = 1, vertices[87] = 1,
-    vertices[88] = -halfWidth, vertices[89] = -halfHeight, vertices[90] = -halfDepth, vertices[91] = -1, vertices[92] = 0, vertices[93] = 0, vertices[94] = 0, vertices[95] = 1,
+    positions[8] = new Vector3(-halfWidth, halfHeight, -halfDepth);
+    normals[8] = new Vector3(-1, 0, 0);
+    uvs[8] = new Vector2(0, 0);
+
+    positions[9] = new Vector3(-halfWidth, halfHeight, halfDepth);
+    normals[9] = new Vector3(-1, 0, 0);
+    uvs[9] = new Vector2(1, 0);
+
+    positions[10] = new Vector3(-halfWidth, -halfHeight, halfDepth);
+    normals[10] = new Vector3(-1, 0, 0);
+    uvs[10] = new Vector2(1, 1);
+
+    positions[11] = new Vector3(-halfWidth, -halfHeight, -halfDepth);
+    normals[11] = new Vector3(-1, 0, 0);
+    uvs[11] = new Vector2(0, 1);
+
     // Right
-    vertices[96] = halfWidth, vertices[97] = halfHeight, vertices[98] = -halfDepth, vertices[99] = 1, vertices[100] = 0, vertices[101] = 0, vertices[102] = 1, vertices[103] = 0,
-    vertices[104] = halfWidth, vertices[105] = halfHeight, vertices[106] = halfDepth, vertices[107] = 1, vertices[108] = 0, vertices[109] = 0, vertices[110] = 0, vertices[111] = 0,
-    vertices[112] = halfWidth, vertices[113] = -halfHeight, vertices[114] = halfDepth, vertices[115] = 1, vertices[116] = 0, vertices[117] = 0, vertices[118] = 0, vertices[119] = 1,
-    vertices[120] = halfWidth, vertices[121] = -halfHeight, vertices[122] = -halfDepth, vertices[123] = 1, vertices[124] = 0, vertices[125] = 0, vertices[126] = 1, vertices[127] = 1,
+    positions[12] = new Vector3(halfWidth, halfHeight, -halfDepth);
+    normals[12] = new Vector3(1, 0, 0);
+    uvs[12] = new Vector2(1, 0);
+
+    positions[13] = new Vector3(halfWidth, halfHeight, halfDepth);
+    normals[13] = new Vector3(1, 0, 0);
+    uvs[13] = new Vector2(0, 0);
+
+    positions[14] = new Vector3(halfWidth, -halfHeight, halfDepth);
+    normals[14] = new Vector3(1, 0, 0);
+    uvs[14] = new Vector2(0, 1);
+
+    positions[15] = new Vector3(halfWidth, -halfHeight, -halfDepth);
+    normals[15] = new Vector3(1, 0, 0);
+    uvs[15] = new Vector2(1, 1);
+
     // Front
-    vertices[128] = -halfWidth, vertices[129] = halfHeight, vertices[130] = halfDepth, vertices[131] = 0, vertices[132] = 0, vertices[133] = 1, vertices[134] = 0, vertices[135] = 0,
-    vertices[136] = halfWidth, vertices[137] = halfHeight, vertices[138] = halfDepth, vertices[139] = 0, vertices[140] = 0, vertices[141] = 1, vertices[142] = 1, vertices[143] = 0,
-    vertices[144] = halfWidth, vertices[145] = -halfHeight, vertices[146] = halfDepth, vertices[147] = 0, vertices[148] = 0, vertices[149] = 1, vertices[150] = 1, vertices[151] = 1,
-    vertices[152] = -halfWidth, vertices[153] = -halfHeight, vertices[154] = halfDepth, vertices[155] = 0, vertices[156] = 0, vertices[157] = 1, vertices[158] = 0, vertices[159] = 1,
+    positions[16] = new Vector3(-halfWidth, halfHeight, halfDepth);
+    normals[16] = new Vector3(0, 0, 1);
+    uvs[16] = new Vector2(0, 0);
+
+    positions[17] = new Vector3(halfWidth, halfHeight, halfDepth);
+    normals[17] = new Vector3(0, 0, 1);
+    uvs[17] = new Vector2(1, 0);
+
+    positions[18] = new Vector3(halfWidth, -halfHeight, halfDepth);
+    normals[18] = new Vector3(0, 0, 1);
+    uvs[18] = new Vector2(1, 1);
+
+    positions[19] = new Vector3(-halfWidth, -halfHeight, halfDepth);
+    normals[19] = new Vector3(0, 0, 1);
+    uvs[19] = new Vector2(0, 1);
+
     // Back
-    vertices[160] = -halfWidth, vertices[161] = halfHeight, vertices[162] = -halfDepth, vertices[163] = 0, vertices[164] = 0, vertices[165] = -1, vertices[166] = 1, vertices[167] = 0,
-    vertices[168] = halfWidth, vertices[169] = halfHeight, vertices[170] = -halfDepth, vertices[171] = 0, vertices[172] = 0, vertices[173] = -1, vertices[174] = 0, vertices[175] = 0,
-    vertices[176] = halfWidth, vertices[177] = -halfHeight, vertices[178] = -halfDepth, vertices[179] = 0, vertices[180] = 0, vertices[181] = -1, vertices[182] = 0, vertices[183] = 1,
-    vertices[184] = -halfWidth, vertices[185] = -halfHeight, vertices[186] = -halfDepth, vertices[187] = 0, vertices[188] = 0, vertices[189] = -1, vertices[190] = 1, vertices[191] = 1;
+    positions[20] = new Vector3(-halfWidth, halfHeight, -halfDepth);
+    normals[20] = new Vector3(0, 0, -1);
+    uvs[20] = new Vector2(1, 0);
+
+    positions[21] = new Vector3(halfWidth, halfHeight, -halfDepth);
+    normals[21] = new Vector3(0, 0, -1);
+    uvs[21] = new Vector2(0, 0);
+
+    positions[22] = new Vector3(halfWidth, -halfHeight, -halfDepth);
+    normals[22] = new Vector3(0, 0, -1);
+    uvs[22] = new Vector2(0, 1);
+
+    positions[23] = new Vector3(-halfWidth, -halfHeight, -halfDepth);
+    normals[23] = new Vector3(0, 0, -1);
+    uvs[23] = new Vector2(1, 1);
 
     const indices = new Uint16Array(36);
 
@@ -165,11 +248,17 @@ export class PrimitiveMesh {
     // Back
     indices[30] = 20, indices[31] = 22, indices[32] = 23, indices[33] = 22, indices[34] = 20, indices[35] = 21;
 
+    mesh.setPositions(positions);
+    mesh.setNormals(normals);
+    mesh.setUVs(uvs);
+    mesh.setIndices(indices);
+    mesh.addSubMesh(0, indices.length);
+    mesh.uploadData(noLongerAccessible);
+
     const { bounds } = mesh;
     bounds.min.setValue(-halfWidth, -halfHeight, -halfDepth);
     bounds.max.setValue(halfWidth, halfHeight, halfDepth);
 
-    PrimitiveMesh._initialize(engine, mesh, vertices, indices);
     return mesh;
   }
 
@@ -180,6 +269,7 @@ export class PrimitiveMesh {
    * @param height - Plane height
    * @param horizontalSegments - Plane horizontal segments
    * @param verticalSegments - Plane verticle segments
+   * @param noLongerAccessible - Whether to access data later. If true, you'll never access data anymore (free memory cache)
    * @returns Plane mesh
    */
   static createPlane(
@@ -187,9 +277,10 @@ export class PrimitiveMesh {
     width: number = 1,
     height: number = 1,
     horizontalSegments: number = 1,
-    verticalSegments: number = 1
-  ): Mesh {
-    const mesh = new Mesh(engine);
+    verticalSegments: number = 1,
+    noLongerAccessible: boolean = true
+  ): ModelMesh {
+    const mesh = new ModelMesh(engine, "planeModelMesh");
     horizontalSegments = Math.max(1, Math.floor(horizontalSegments));
     verticalSegments = Math.max(1, Math.floor(verticalSegments));
 
@@ -200,13 +291,10 @@ export class PrimitiveMesh {
     const gridWidth = width / horizontalSegments;
     const gridHeight = height / verticalSegments;
     const vertexCount = horizontalCount * verticalCount;
-    const vertices = new Float32Array(vertexCount * 8);
     const rectangleCount = verticalSegments * horizontalSegments;
     let indices: Uint16Array | Uint32Array = null;
-    let useUint32: boolean = false;
     if (vertexCount > PrimitiveMesh._uint16VertexLimit) {
-      if (engine._hardwareRenderer.canIUse(GLCapabilityType.elementIndexUint)) {
-        useUint32 = true;
+      if (engine.renderhardware.canIUse(GLCapabilityType.elementIndexUint)) {
         indices = new Uint32Array(rectangleCount * 6);
       } else {
         throw Error("The vertex count is over limit.");
@@ -218,22 +306,21 @@ export class PrimitiveMesh {
     const horizontalSegmentsReciprocal = 1.0 / horizontalSegments;
     const verticalSegmentsReciprocal = 1.0 / verticalSegments;
 
+    const positions: Vector3[] = [];
+    const normals: Vector3[] = [];
+    const uvs: Vector2[] = [];
+
     let offset = 0;
     for (let i = 0; i < vertexCount; ++i) {
       const x = i % horizontalCount;
       const y = (i * horizontalCountReciprocal) | 0;
 
       // Position
-      vertices[offset++] = x * gridWidth - halfWidth;
-      vertices[offset++] = y * gridHeight - halfHeight;
-      vertices[offset++] = 0;
+      positions[offset] = new Vector3(x * gridWidth - halfWidth, y * gridHeight - halfHeight, 0);
       // Normal
-      vertices[offset++] = 0;
-      vertices[offset++] = 0;
-      vertices[offset++] = 1;
+      normals[offset] = new Vector3(0, 0, 1);
       // Texcoord
-      vertices[offset++] = x * horizontalSegmentsReciprocal;
-      vertices[offset++] = 1 - y * verticalSegmentsReciprocal;
+      uvs[offset++] = new Vector2(x * horizontalSegmentsReciprocal, 1 - y * verticalSegmentsReciprocal);
     }
 
     offset = 0;
@@ -254,11 +341,17 @@ export class PrimitiveMesh {
       indices[offset++] = c;
     }
 
+    mesh.setPositions(positions);
+    mesh.setNormals(normals);
+    mesh.setUVs(uvs);
+    mesh.setIndices(indices);
+    mesh.addSubMesh(0, indices.length);
+    mesh.uploadData(noLongerAccessible);
+
     const { bounds } = mesh;
     bounds.min.setValue(-halfWidth, -halfHeight, 0);
     bounds.max.setValue(halfWidth, halfHeight, 0);
 
-    PrimitiveMesh._initialize(engine, mesh, vertices, indices, useUint32);
     return mesh;
   }
 
@@ -269,6 +362,7 @@ export class PrimitiveMesh {
    * @param height - The height of torso
    * @param radialSegments - Cylinder radial segments
    * @param heightSegments - Cylinder height segments
+   * @param noLongerAccessible - Whether to access data later. If true, you'll never access data anymore (free memory cache)
    * @returns Cylinder mesh
    */
   static createCylinder(
@@ -276,9 +370,10 @@ export class PrimitiveMesh {
     radius: number = 0.5,
     height: number = 2,
     radialSegments: number = 20,
-    heightSegments: number = 1
-  ): Mesh {
-    const mesh = new Mesh(engine);
+    heightSegments: number = 1,
+    noLongerAccessible: boolean = true
+  ): ModelMesh {
+    const mesh = new ModelMesh(engine, "cylinderModelMesh");
     radialSegments = Math.floor(radialSegments);
     heightSegments = Math.floor(heightSegments);
 
@@ -290,12 +385,9 @@ export class PrimitiveMesh {
     const torsoRectangleCount = radialSegments * heightSegments;
     const capTriangleCount = radialSegments * 2;
     const totalVertexCount = torsoVertexCount + 2 + capTriangleCount;
-    const vertices = new Float32Array(totalVertexCount * 8);
     let indices: Uint16Array | Uint32Array = null;
-    let useUint32: boolean = false;
     if (totalVertexCount > PrimitiveMesh._uint16VertexLimit) {
-      if (engine._hardwareRenderer.canIUse(GLCapabilityType.elementIndexUint)) {
-        useUint32 = true;
+      if (engine.renderhardware.canIUse(GLCapabilityType.elementIndexUint)) {
         indices = new Uint32Array(torsoRectangleCount * 6 + capTriangleCount * 3);
       } else {
         throw Error("The vertex count is over limit.");
@@ -306,6 +398,10 @@ export class PrimitiveMesh {
     const radialCountReciprocal = 1.0 / radialCount;
     const radialSegmentsReciprocal = 1.0 / radialSegments;
     const heightSegmentsReciprocal = 1.0 / heightSegments;
+
+    const positions: Vector3[] = [];
+    const normals: Vector3[] = [];
+    const uvs: Vector2[] = [];
 
     let verticesOffset = 0;
     let indicesOffset = 0;
@@ -327,16 +423,11 @@ export class PrimitiveMesh {
       let posZ = radius * cosTheta;
 
       // Position
-      vertices[verticesOffset++] = posX;
-      vertices[verticesOffset++] = posY;
-      vertices[verticesOffset++] = posZ;
+      positions[verticesOffset] = new Vector3(posX, posY, posZ);
       // Normal
-      vertices[verticesOffset++] = sinTheta;
-      vertices[verticesOffset++] = 0;
-      vertices[verticesOffset++] = cosTheta;
+      normals[verticesOffset] = new Vector3(sinTheta, 0, cosTheta);
       // Texcoord
-      vertices[verticesOffset++] = u;
-      vertices[verticesOffset++] = 1 - v;
+      uvs[verticesOffset++] = new Vector2(u, 1 - v);
     }
 
     for (let i = 0; i < torsoRectangleCount; ++i) {
@@ -357,61 +448,42 @@ export class PrimitiveMesh {
     }
 
     // Bottom position
-    vertices[verticesOffset++] = 0;
-    vertices[verticesOffset++] = -halfHeight;
-    vertices[verticesOffset++] = 0;
+    positions[verticesOffset] = new Vector3(0, -halfHeight, 0);
     // Bottom normal
-    vertices[verticesOffset++] = 0;
-    vertices[verticesOffset++] = -1;
-    vertices[verticesOffset++] = 0;
+    normals[verticesOffset] = new Vector3(0, -1, 0);
     // Bottom texcoord
-    vertices[verticesOffset++] = 0.5;
-    vertices[verticesOffset++] = 0.5;
+    uvs[verticesOffset++] = new Vector2(0.5, 0.5);
 
     // Top position
-    vertices[verticesOffset++] = 0;
-    vertices[verticesOffset++] = halfHeight;
-    vertices[verticesOffset++] = 0;
+    positions[verticesOffset] = new Vector3(0, halfHeight, 0);
     // Top normal
-    vertices[verticesOffset++] = 0;
-    vertices[verticesOffset++] = 1;
-    vertices[verticesOffset++] = 0;
+    normals[verticesOffset] = new Vector3(0, 1, 0);
     // Top texcoord
-    vertices[verticesOffset++] = 0.5;
-    vertices[verticesOffset++] = 0.5;
+    uvs[verticesOffset++] = new Vector2(0.5, 0.5);
 
     // Add cap vertices
     const diameterReciprocal = 1.0 / (radius * 2);
     for (let i = 0; i < radialSegments; ++i) {
-      const curVertexIndex = i * 8;
-      const curPosX = vertices[curVertexIndex];
-      const curPosZ = vertices[curVertexIndex + 2];
+      const curVertexIndex = i;
+      const curPos = positions[curVertexIndex];
+      const curPosX = curPos.x;
+      const curPosZ = curPos.z;
       const u = curPosX * diameterReciprocal + 0.5;
       const v = curPosZ * diameterReciprocal + 0.5;
 
       // Bottom position
-      vertices[verticesOffset++] = curPosX;
-      vertices[verticesOffset++] = -halfHeight;
-      vertices[verticesOffset++] = curPosZ;
+      positions[verticesOffset] = new Vector3(curPosX, -halfHeight, curPosZ);
       // Bottom normal
-      vertices[verticesOffset++] = 0;
-      vertices[verticesOffset++] = -1;
-      vertices[verticesOffset++] = 0;
+      normals[verticesOffset] = new Vector3(0, -1, 0);
       // Bottom texcoord
-      vertices[verticesOffset++] = u;
-      vertices[verticesOffset++] = 1 - v;
+      uvs[verticesOffset++] = new Vector2(u, 1 - v);
 
       // Top position
-      vertices[verticesOffset++] = curPosX;
-      vertices[verticesOffset++] = halfHeight;
-      vertices[verticesOffset++] = curPosZ;
+      positions[verticesOffset] = new Vector3(curPosX, halfHeight, curPosZ);
       // Top normal
-      vertices[verticesOffset++] = 0;
-      vertices[verticesOffset++] = 1;
-      vertices[verticesOffset++] = 0;
+      normals[verticesOffset] = new Vector3(0, 1, 0);
       // Top texcoord
-      vertices[verticesOffset++] = u;
-      vertices[verticesOffset++] = v;
+      uvs[verticesOffset++] = new Vector2(u, v);
     }
 
     // Add cap indices
@@ -433,34 +505,17 @@ export class PrimitiveMesh {
       indices[indicesOffset++] = topIndiceIndex + secondStride;
     }
 
+    mesh.setPositions(positions);
+    mesh.setNormals(normals);
+    mesh.setUVs(uvs);
+    mesh.setIndices(indices);
+    mesh.addSubMesh(0, indices.length);
+    mesh.uploadData(noLongerAccessible);
+
     const { bounds } = mesh;
     bounds.min.setValue(-radius, -halfHeight, -radius);
     bounds.max.setValue(radius, halfHeight, radius);
 
-    PrimitiveMesh._initialize(engine, mesh, vertices, indices, useUint32);
     return mesh;
-  }
-
-  private static _initialize(
-    engine: Engine,
-    mesh: Mesh,
-    vertices: Float32Array,
-    indices: Uint16Array | Uint32Array,
-    useUint32: boolean = false
-  ) {
-    const vertexStride = 32;
-    const vertexElements = [
-      new VertexElement("POSITION", 0, VertexElementFormat.Vector3, 0),
-      new VertexElement("NORMAL", 12, VertexElementFormat.Vector3, 0),
-      new VertexElement("TEXCOORD_0", 24, VertexElementFormat.Vector2, 0)
-    ];
-
-    const vertexBuffer = new Buffer(engine, BufferBindFlag.VertexBuffer, vertices, BufferUsage.Static);
-    const indexBuffer = new Buffer(engine, BufferBindFlag.IndexBuffer, indices, BufferUsage.Static);
-
-    mesh.setVertexBufferBinding(vertexBuffer, vertexStride);
-    mesh.setIndexBufferBinding(indexBuffer, useUint32 ? IndexFormat.UInt32 : IndexFormat.UInt16);
-    mesh.setVertexElements(vertexElements);
-    mesh.addSubMesh(0, indices.length);
   }
 }
