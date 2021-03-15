@@ -15,7 +15,7 @@ export class PrimitiveMesh {
    * @param engine - Engine
    * @param radius - Sphere radius
    * @param segments - Number of segments
-   * @param accessible - Whether to access data later. If false, you'll never access data anymore (free memory cache)
+   * @param accessible - Whether to access data later. If true, you can access the data anytime
    * @returns Sphere mesh
    */
   static createSphere(
@@ -109,7 +109,7 @@ export class PrimitiveMesh {
    * @param width - Cuboid width
    * @param height - Cuboid height
    * @param depth - Cuboid depth
-   * @param accessible - Whether to access data later. If false, you'll never access data anymore (free memory cache)
+   * @param accessible - Whether to access data later. If true, you can access the data anytime
    * @returns Cuboid mesh
    */
   static createCuboid(
@@ -269,7 +269,7 @@ export class PrimitiveMesh {
    * @param height - Plane height
    * @param horizontalSegments - Plane horizontal segments
    * @param verticalSegments - Plane verticle segments
-   * @param accessible - Whether to access data later. If false, you'll never access data anymore (free memory cache)
+   * @param accessible - Whether to access data later. If true, you can access the data anytime
    * @returns Plane mesh
    */
   static createPlane(
@@ -362,7 +362,7 @@ export class PrimitiveMesh {
    * @param height - The height of torso
    * @param radialSegments - Cylinder radial segments
    * @param heightSegments - Cylinder height segments
-   * @param accessible - Whether to access data later. If false, you'll never access data anymore (free memory cache)
+   * @param accessible - Whether to access data later. If true, you can access the data anytime
    * @returns Cylinder mesh
    */
   static createCylinder(
