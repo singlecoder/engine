@@ -15,14 +15,14 @@ export class PrimitiveMesh {
    * @param engine - Engine
    * @param radius - Sphere radius
    * @param segments - Number of segments
-   * @param noLongerAccessible - Whether to access data later. If true, you'll never access data anymore (free memory cache)
+   * @param accessible - Whether to access data later. If false, you'll never access data anymore (free memory cache)
    * @returns Sphere mesh
    */
   static createSphere(
     engine: Engine,
     radius: number = 0.5,
     segments: number = 12,
-    noLongerAccessible: boolean = true
+    accessible: boolean = false
   ): ModelMesh {
     const mesh = new ModelMesh(engine, "sphereModelMesh");
     segments = Math.max(2, Math.floor(segments));
@@ -94,7 +94,7 @@ export class PrimitiveMesh {
     mesh.setUVs(uvs);
     mesh.setIndices(indices);
     mesh.addSubMesh(0, indices.length);
-    mesh.uploadData(noLongerAccessible);
+    mesh.uploadData(!accessible);
 
     const { bounds } = mesh;
     bounds.min.setValue(-radius, -radius, -radius);
@@ -109,7 +109,7 @@ export class PrimitiveMesh {
    * @param width - Cuboid width
    * @param height - Cuboid height
    * @param depth - Cuboid depth
-   * @param noLongerAccessible - Whether to access data later. If true, you'll never access data anymore (free memory cache)
+   * @param accessible - Whether to access data later. If false, you'll never access data anymore (free memory cache)
    * @returns Cuboid mesh
    */
   static createCuboid(
@@ -117,7 +117,7 @@ export class PrimitiveMesh {
     width: number = 1,
     height: number = 1,
     depth: number = 1,
-    noLongerAccessible: boolean = true
+    accessible: boolean = true
   ): ModelMesh {
     const mesh = new ModelMesh(engine, "cuboidModelMesh");
 
@@ -253,7 +253,7 @@ export class PrimitiveMesh {
     mesh.setUVs(uvs);
     mesh.setIndices(indices);
     mesh.addSubMesh(0, indices.length);
-    mesh.uploadData(noLongerAccessible);
+    mesh.uploadData(!accessible);
 
     const { bounds } = mesh;
     bounds.min.setValue(-halfWidth, -halfHeight, -halfDepth);
@@ -269,7 +269,7 @@ export class PrimitiveMesh {
    * @param height - Plane height
    * @param horizontalSegments - Plane horizontal segments
    * @param verticalSegments - Plane verticle segments
-   * @param noLongerAccessible - Whether to access data later. If true, you'll never access data anymore (free memory cache)
+   * @param accessible - Whether to access data later. If false, you'll never access data anymore (free memory cache)
    * @returns Plane mesh
    */
   static createPlane(
@@ -278,7 +278,7 @@ export class PrimitiveMesh {
     height: number = 1,
     horizontalSegments: number = 1,
     verticalSegments: number = 1,
-    noLongerAccessible: boolean = true
+    accessible: boolean = true
   ): ModelMesh {
     const mesh = new ModelMesh(engine, "planeModelMesh");
     horizontalSegments = Math.max(1, Math.floor(horizontalSegments));
@@ -346,7 +346,7 @@ export class PrimitiveMesh {
     mesh.setUVs(uvs);
     mesh.setIndices(indices);
     mesh.addSubMesh(0, indices.length);
-    mesh.uploadData(noLongerAccessible);
+    mesh.uploadData(!accessible);
 
     const { bounds } = mesh;
     bounds.min.setValue(-halfWidth, -halfHeight, 0);
@@ -362,7 +362,7 @@ export class PrimitiveMesh {
    * @param height - The height of torso
    * @param radialSegments - Cylinder radial segments
    * @param heightSegments - Cylinder height segments
-   * @param noLongerAccessible - Whether to access data later. If true, you'll never access data anymore (free memory cache)
+   * @param accessible - Whether to access data later. If false, you'll never access data anymore (free memory cache)
    * @returns Cylinder mesh
    */
   static createCylinder(
@@ -371,7 +371,7 @@ export class PrimitiveMesh {
     height: number = 2,
     radialSegments: number = 20,
     heightSegments: number = 1,
-    noLongerAccessible: boolean = true
+    accessible: boolean = true
   ): ModelMesh {
     const mesh = new ModelMesh(engine, "cylinderModelMesh");
     radialSegments = Math.floor(radialSegments);
@@ -510,7 +510,7 @@ export class PrimitiveMesh {
     mesh.setUVs(uvs);
     mesh.setIndices(indices);
     mesh.addSubMesh(0, indices.length);
-    mesh.uploadData(noLongerAccessible);
+    mesh.uploadData(!accessible);
 
     const { bounds } = mesh;
     bounds.min.setValue(-radius, -halfHeight, -radius);
