@@ -381,7 +381,7 @@ export class Camera extends Component {
 
   /**
    * Generate a ray by a point in viewport.
-   * @param point Point in viewport point.
+   * @param point Point in viewport point, which is represented by normalization.
    * @param out - Ray
    * @returns Ray
    */
@@ -480,7 +480,7 @@ export class Camera extends Component {
    * @inheritdoc
    */
   _onActive() {
-    this.entity.scene.attachRenderCamera(this);
+    this.entity.scene._attachRenderCamera(this);
   }
 
   /**
@@ -488,7 +488,7 @@ export class Camera extends Component {
    * @inheritdoc
    */
   _onInActive() {
-    this.entity.scene.detachRenderCamera(this);
+    this.entity.scene._detachRenderCamera(this);
   }
 
   /**
