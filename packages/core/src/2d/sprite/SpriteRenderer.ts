@@ -107,7 +107,7 @@ export class SpriteRenderer extends Renderer {
    */
   _render(camera: Camera): void {
     const { sprite } = this;
-    if (!this.sprite) {
+    if (!sprite) {
       return;
     }
     const { texture } = sprite;
