@@ -31,9 +31,9 @@ export class SpriteBatcher extends Basic2DBatcher {
     return 36;
   }
 
-  _canBatch(preSpriteElement: SpriteElement, curSpriteElement: SpriteElement): boolean {
-    const preSpriteRenderer = <SpriteRenderer>preSpriteElement.component;
-    const curSpriteRenderer = <SpriteRenderer>curSpriteElement.component;
+  _canBatch(preElement: SpriteElement, curElement: SpriteElement): boolean {
+    const preSpriteRenderer = <SpriteRenderer>preElement.component;
+    const curSpriteRenderer = <SpriteRenderer>curElement.component;
 
     // Compare mask
     if (!this._checkBatchByMask(preSpriteRenderer, curSpriteRenderer)) {
@@ -41,7 +41,7 @@ export class SpriteBatcher extends Basic2DBatcher {
     }
 
     // Compare camera
-    if (preSpriteElement.camera !== curSpriteElement.camera) {
+    if (preElement.camera !== curElement.camera) {
       return false;
     }
 
@@ -54,8 +54,8 @@ export class SpriteBatcher extends Basic2DBatcher {
     }
 
     // Compare material and shader
-    const preMaterial = preSpriteElement.material;
-    const curMaterial = curSpriteElement.material;
+    const preMaterial = preElement.material;
+    const curMaterial = curElement.material;
     if (
       preMaterial === curMaterial ||
       (preMaterial.shader.name === curMaterial.shader.name && curMaterial.shader.name === "Sprite")
