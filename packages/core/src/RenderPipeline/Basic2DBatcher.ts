@@ -13,16 +13,27 @@ export abstract class Basic2DBatcher {
   static MAX_VERTEX_COUNT: number = 4096;
   static _canUploadSameBuffer: boolean = !SystemInfo._isIos();
 
+  /** @internal */
   _subMeshPool: ClassPool<SubMesh> = new ClassPool(SubMesh);
+  /** @internal */
   _batchedQueue: Element[] = [];
+  /** @internal */
   _meshes: BufferMesh[] = [];
+  /** @internal */
   _meshCount: number = 1;
+  /** @internal */
   _vertexBuffers: Buffer[] = [];
+  /** @internal */
   _indiceBuffers: Buffer[] = [];
+  /** @internal */
   _vertices: Float32Array;
+  /** @internal */
   _indices: Uint16Array;
+  /** @internal */
   _flushId: number = 0;
+  /** @internal */
   _vertexCount: number = 0;
+  /** @internal */
   _elementCount: number = 0;
 
   constructor(engine: Engine) {
