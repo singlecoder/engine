@@ -36,6 +36,16 @@ export abstract class Basic2DBatcher {
     }
   }
 
+  drawElement(element: Element): void {
+    const len = element.positions.length;
+    if (this._vertexCount + len > Basic2DBatcher.MAX_VERTEX_COUNT) {
+      this.flush(element.camera.engine);
+    }
+
+    this._vertexCount += len;
+    this._batchedQueue[this._elementCount++] = element;
+  }
+
   flush(engine: Engine): void {
     const { _batchedQueue } = this;
 
@@ -149,7 +159,7 @@ export abstract class Basic2DBatcher {
       if (preElement === null) {
         vertexCount += triangleNum;
       } else {
-        debugger
+        debugger;
         if (this._canBatch(preElement, curElement)) {
           vertexCount += triangleNum;
         } else {

@@ -14,16 +14,6 @@ import { SpriteMaskManager } from "./SpriteMaskManager";
 export class SpriteBatcher extends Basic2DBatcher {
   private static _textureProperty: ShaderProperty = Shader.getPropertyByName("u_spriteTexture");
 
-  drawSprite(spriteElement: SpriteElement): void {
-    const len = spriteElement.positions.length;
-    if (this._vertexCount + len > Basic2DBatcher.MAX_VERTEX_COUNT) {
-      this.flush(spriteElement.camera.engine);
-    }
-
-    this._vertexCount += len;
-    this._batchedQueue[this._elementCount++] = spriteElement;
-  }
-
   _createVertexElements(vertexElements: VertexElement[]): number {
     vertexElements[0] = new VertexElement("POSITION", 0, VertexElementFormat.Vector3, 0);
     vertexElements[1] = new VertexElement("TEXCOORD_0", 12, VertexElementFormat.Vector2, 0);
