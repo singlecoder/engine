@@ -2,7 +2,7 @@ import { SpriteMaskInteraction, SpriteRenderer } from "../2d";
 import { Engine } from "../Engine";
 import { VertexElementFormat } from "../graphic/enums/VertexElementFormat";
 import { VertexElement } from "../graphic/VertexElement";
-import { Shader } from "../shader";
+import { Shader } from "../shader/Shader";
 import { ShaderProperty } from "../shader/ShaderProperty";
 import { Basic2DBatcher } from "./Basic2DBatcher";
 import { SpriteElement } from "./SpriteElement";
