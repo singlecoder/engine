@@ -1,7 +1,9 @@
-import { SpriteMask } from "../2d";
+import { SpriteMask } from "../2d/sprite/SpriteMask";
 import { Engine } from "../Engine";
-import { VertexElement, VertexElementFormat } from "../graphic";
-import { Shader, StencilOperation } from "../shader";
+import { VertexElementFormat } from "../graphic/enums/VertexElementFormat";
+import { VertexElement } from "../graphic/VertexElement";
+import { StencilOperation } from "../shader/enums/StencilOperation";
+import { Shader } from "../shader/Shader";
 import { Basic2DBatcher } from "./Basic2DBatcher";
 import { SpriteMaskElement } from "./SpriteMaskElement";
 
@@ -19,10 +21,10 @@ export class SpriteMaskBatcher extends Basic2DBatcher {
 
     const preMask = <SpriteMask>preElement.component;
     const curMask = <SpriteMask>curElement.component;
-    const preShaderData = preMask.material.shaderData;
-    const curShaderData = curMask.material.shaderData;
-    const textureProperty = SpriteMask.textureProperty;
-    const alphaCutoffProperty = SpriteMask.alphaCutoffProperty;
+    const preShaderData = preMask.shaderData;
+    const curShaderData = curMask.shaderData;
+    const textureProperty = SpriteMask._textureProperty;
+    const alphaCutoffProperty = SpriteMask._alphaCutoffProperty;
 
     if (
       preShaderData.getTexture(textureProperty) === curShaderData.getTexture(textureProperty) &&
@@ -80,11 +82,13 @@ export class SpriteMaskBatcher extends Basic2DBatcher {
       }
 
       const camera = spriteMaskElement.camera;
+      const render = <SpriteMask>spriteMaskElement.component;
 
       program.bind();
       program.groupingOtherUniformBlock();
       program.uploadAll(program.sceneUniformBlock, camera.scene.shaderData);
       program.uploadAll(program.cameraUniformBlock, camera.shaderData);
+      program.uploadAll(program.rendererUniformBlock, render.shaderData);
       program.uploadAll(program.materialUniformBlock, material.shaderData);
 
       material.renderState._apply(engine);

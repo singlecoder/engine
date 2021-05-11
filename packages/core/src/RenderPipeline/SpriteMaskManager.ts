@@ -1,4 +1,6 @@
-import { SpriteMask, SpriteMaskInteraction, SpriteRenderer } from "../2d";
+import { SpriteMaskInteraction } from "../2d/enums/SpriteMaskInteraction";
+import { SpriteMask } from "../2d/sprite/SpriteMask";
+import { SpriteRenderer } from "../2d/sprite/SpriteRenderer";
 import { Camera } from "../Camera";
 import { DisorderedArray } from "../DisorderedArray";
 import { Engine } from "../Engine";
@@ -134,7 +136,7 @@ export class SpriteMaskManager {
   }
 
   private _preDrawMask(mask: SpriteMask, isAdd: boolean): void {
-    const element = mask.getElement();
+    const element = mask._getElement();
     if (element) {
       element.isAdd = isAdd;
       element.camera = this._curCamera;
