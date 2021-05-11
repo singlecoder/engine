@@ -82,13 +82,13 @@ export class SpriteMaskBatcher extends Basic2DBatcher {
       }
 
       const camera = spriteMaskElement.camera;
-      const render = <SpriteMask>spriteMaskElement.component;
+      const renderer = <SpriteMask>spriteMaskElement.component;
 
       program.bind();
       program.groupingOtherUniformBlock();
       program.uploadAll(program.sceneUniformBlock, camera.scene.shaderData);
       program.uploadAll(program.cameraUniformBlock, camera.shaderData);
-      program.uploadAll(program.rendererUniformBlock, render.shaderData);
+      program.uploadAll(program.rendererUniformBlock, renderer.shaderData);
       program.uploadAll(program.materialUniformBlock, material.shaderData);
 
       material.renderState._apply(engine);
