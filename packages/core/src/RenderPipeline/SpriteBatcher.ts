@@ -30,16 +30,12 @@ export class SpriteBatcher extends Basic2DBatcher {
       return false;
     }
 
-    // Compare camera
-    if (preElement.camera !== curElement.camera) {
-      return false;
-    }
-
     // Compare texture
-    const { _textureProperty } = SpriteBatcher;
-    const preTexture = preSpriteRenderer.shaderData.getTexture(_textureProperty);
-    const curTexture = curSpriteRenderer.shaderData.getTexture(_textureProperty);
-    if (preTexture !== curTexture) {
+    const textureProperty = SpriteBatcher._textureProperty;
+    if (
+      preSpriteRenderer.shaderData.getTexture(textureProperty) !==
+      curSpriteRenderer.shaderData.getTexture(textureProperty)
+    ) {
       return false;
     }
 
