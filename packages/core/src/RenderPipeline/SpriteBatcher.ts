@@ -43,17 +43,8 @@ export class SpriteBatcher extends Basic2DBatcher {
       return false;
     }
 
-    // Compare material and shader
-    const preMaterial = preElement.material;
-    const curMaterial = curElement.material;
-    if (
-      preMaterial === curMaterial ||
-      (preMaterial.shader.name === curMaterial.shader.name && curMaterial.shader.name === "Sprite")
-    ) {
-      return true;
-    }
-
-    return false;
+    // Compare material
+    return preElement.material === curElement.material;
   }
 
   checkBatchWithMask(left: SpriteRenderer, right: SpriteRenderer): boolean {
