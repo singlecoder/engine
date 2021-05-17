@@ -2,11 +2,8 @@ import { Vector3 } from "@oasis-engine/math";
 import { Camera } from "../../Camera";
 import { assignmentClone, deepClone, ignoreClone } from "../../clone/CloneManager";
 import { Entity } from "../../Entity";
-import { Material } from "../../material/Material";
 import { Renderer } from "../../Renderer";
 import { SpriteMaskElement } from "../../RenderPipeline/SpriteMaskElement";
-import { ColorWriteMask } from "../../shader/enums/ColorWriteMask";
-import { CullMode } from "../../shader/enums/CullMode";
 import { Shader } from "../../shader/Shader";
 import { ShaderProperty } from "../../shader/ShaderProperty";
 import { UpdateFlag } from "../../UpdateFlag";
@@ -73,7 +70,7 @@ export class SpriteMask extends Renderer {
   constructor(entity: Entity) {
     super(entity);
     this._worldMatrixDirtyFlag = entity.transform.registerWorldChangeFlag();
-    this.setMaterial(this._createMaterial());
+    this.setMaterial(this._engine._spriteMaskDefaultMaterial);
     this.shaderData.setFloat(SpriteMask._alphaCutoffProperty, this._alphaCutoff);
   }
 
@@ -145,15 +142,5 @@ export class SpriteMask extends Renderer {
     maskElement.camera = camera;
     this._engine.spriteMaskManager._batcher.drawElement(maskElement);
     return maskElement;
-  }
-
-  private _createMaterial(): Material {
-    const material = new Material(this.engine, Shader.find("SpriteMask"));
-    const renderState = material.renderState;
-    renderState.blendState.targetBlendState.colorWriteMask = ColorWriteMask.None;
-    renderState.rasterState.cullMode = CullMode.Off;
-    renderState.stencilState.enabled = true;
-    renderState.depthState.enabled = false;
-    return material;
   }
 }
