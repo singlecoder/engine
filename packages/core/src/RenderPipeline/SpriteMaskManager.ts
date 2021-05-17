@@ -66,10 +66,10 @@ export class SpriteMaskManager {
    * Find all masks that the renderer used.
    */
   private _findMasks(camera: Camera, renderer: SpriteRenderer, masks: DisorderedArray<SpriteMask>): void {
-    const { _allMasks: allMasks } = this;
+    const allMasks = this._allMasks;
     const maskLayer = renderer.maskLayer;
     const elements = allMasks._elements;
-    for (let i = 0, l = allMasks.length; i < l; ++i) {
+    for (let i = 0, n = allMasks.length; i < n; ++i) {
       const element = elements[i];
       if (camera.cullingMask & element.entity.layer && maskLayer & element.influenceLayers) {
         masks.add(element);

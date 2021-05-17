@@ -14,19 +14,19 @@ import { SpriteElement } from "./SpriteElement";
 export class SpriteBatcher extends Basic2DBatcher {
   private static _textureProperty: ShaderProperty = Shader.getPropertyByName("u_spriteTexture");
 
-  _createVertexElements(vertexElements: VertexElement[]): number {
+  createVertexElements(vertexElements: VertexElement[]): number {
     vertexElements[0] = new VertexElement("POSITION", 0, VertexElementFormat.Vector3, 0);
     vertexElements[1] = new VertexElement("TEXCOORD_0", 12, VertexElementFormat.Vector2, 0);
     vertexElements[2] = new VertexElement("COLOR_0", 20, VertexElementFormat.Vector4, 0);
     return 36;
   }
 
-  _canBatch(preElement: SpriteElement, curElement: SpriteElement): boolean {
+  canBatch(preElement: SpriteElement, curElement: SpriteElement): boolean {
     const preSpriteRenderer = <SpriteRenderer>preElement.component;
     const curSpriteRenderer = <SpriteRenderer>curElement.component;
 
     // Compare mask
-    if (!this._checkBatchByMask(preSpriteRenderer, curSpriteRenderer)) {
+    if (!this.checkBatchWithMask(preSpriteRenderer, curSpriteRenderer)) {
       return false;
     }
 
@@ -56,20 +56,19 @@ export class SpriteBatcher extends Basic2DBatcher {
     return false;
   }
 
-  _checkBatchByMask(sr1: SpriteRenderer, sr2: SpriteRenderer): boolean {
-    const maskInteraction1 = sr1.maskInteraction;
-    if (maskInteraction1 !== sr2.maskInteraction) {
+  checkBatchWithMask(left: SpriteRenderer, right: SpriteRenderer): boolean {
+    const leftMaskInteraction = left.maskInteraction;
+
+    if (leftMaskInteraction !== right.maskInteraction) {
       return false;
     }
-
-    if (maskInteraction1 === SpriteMaskInteraction.None) {
+    if (leftMaskInteraction === SpriteMaskInteraction.None) {
       return true;
     }
-
-    return sr1.maskLayer === sr2.maskLayer;
+    return left.maskLayer === right.maskLayer;
   }
 
-  _updateVertices(element: SpriteElement, vertices: Float32Array, vertexIndex: number): number {
+  updateVertices(element: SpriteElement, vertices: Float32Array, vertexIndex: number): number {
     const { positions, uv, color } = element;
     const verticesNum = positions.length;
     for (let i = 0; i < verticesNum; i++) {
@@ -90,7 +89,7 @@ export class SpriteBatcher extends Basic2DBatcher {
     return vertexIndex;
   }
 
-  _drawBatches(engine: Engine): void {
+  drawBatches(engine: Engine): void {
     const mesh = this._meshes[this._flushId];
     const subMeshes = mesh.subMeshes;
     const batchedQueue = this._batchedQueue;
