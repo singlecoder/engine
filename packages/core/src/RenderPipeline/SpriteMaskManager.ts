@@ -11,7 +11,6 @@ export class SpriteMaskManager {
 
   _batcher: SpriteMaskBatcher = null;
 
-  private _curCamera: Camera = null;
   private _allMasks: DisorderedArray<SpriteMask> = new DisorderedArray();
   private _previousMasks: DisorderedArray<SpriteMask> = new DisorderedArray();
   private _curMasks: DisorderedArray<SpriteMask> = new DisorderedArray();
@@ -33,10 +32,9 @@ export class SpriteMaskManager {
       return;
     }
 
-    this._curCamera = camera;
     this._batcher.clear();
-    this._findMasks(renderer, this._curMasks);
-    this._processMasksDiff();
+    this._findMasks(camera, renderer, this._curMasks);
+    this._processMasksDiff(camera);
 
     this._batcher.flush(camera.engine);
   }
@@ -67,8 +65,8 @@ export class SpriteMaskManager {
   /**
    * Find all masks that the renderer used.
    */
-  private _findMasks(renderer: SpriteRenderer, masks: DisorderedArray<SpriteMask>): void {
-    const { _curCamera: camera, _allMasks: allMasks } = this;
+  private _findMasks(camera: Camera, renderer: SpriteRenderer, masks: DisorderedArray<SpriteMask>): void {
+    const { _allMasks: allMasks } = this;
     const maskLayer = renderer.maskLayer;
     const elements = allMasks._elements;
     for (let i = 0, l = allMasks.length; i < l; ++i) {
@@ -82,7 +80,7 @@ export class SpriteMaskManager {
   /**
    * Process the differences between all current masks and all previous masks.
    */
-  private _processMasksDiff(): void {
+  private _processMasksDiff(camera: Camera): void {
     const curMasks = this._previousMasks;
     const newMasks = this._curMasks;
     const curElements = curMasks._elements;
@@ -96,7 +94,7 @@ export class SpriteMaskManager {
 
     if (curLen === 0) {
       for (let i = 0; i < newLen; ++i) {
-        newElements[i]._render(this._curCamera).isAdd = true;
+        newElements[i]._render(camera).isAdd = true;
       }
       return;
     }
@@ -115,14 +113,14 @@ export class SpriteMaskManager {
     for (let i = 0; i < newLen; ++i) {
       const element = newElements[i];
       if (!repeatMasks.has(element)) {
-        element._render(this._curCamera).isAdd = true;
+        element._render(camera).isAdd = true;
       }
     }
 
     for (let i = 0; i < curLen; ++i) {
       const element = curElements[i];
       if (!repeatMasks.has(element)) {
-        element._render(this._curCamera).isAdd = false;
+        element._render(camera).isAdd = false;
       }
     }
   }
