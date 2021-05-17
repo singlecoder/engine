@@ -22,19 +22,19 @@ export class SpriteBatcher extends Basic2DBatcher {
   }
 
   canBatch(preElement: SpriteElement, curElement: SpriteElement): boolean {
-    const preSpriteRenderer = <SpriteRenderer>preElement.component;
-    const curSpriteRenderer = <SpriteRenderer>curElement.component;
+    const preRenderer = <SpriteRenderer>preElement.component;
+    const curRenderer = <SpriteRenderer>curElement.component;
 
     // Compare mask
-    if (!this.checkBatchWithMask(preSpriteRenderer, curSpriteRenderer)) {
+    if (!this.checkBatchWithMask(preRenderer, curRenderer)) {
       return false;
     }
 
-    // Compare texture
+    // Compare renderer property
     const textureProperty = SpriteBatcher._textureProperty;
     if (
-      preSpriteRenderer.shaderData.getTexture(textureProperty) !==
-      curSpriteRenderer.shaderData.getTexture(textureProperty)
+      preRenderer.shaderData.getTexture(textureProperty) !==
+      curRenderer.shaderData.getTexture(textureProperty)
     ) {
       return false;
     }

@@ -19,21 +19,16 @@ export class SpriteMaskBatcher extends Basic2DBatcher {
       return false;
     }
 
-    const preMask = <SpriteMask>preElement.component;
-    const curMask = <SpriteMask>curElement.component;
-    const preShaderData = preMask.shaderData;
-    const curShaderData = curMask.shaderData;
+    // Compare renderer property
+    const preShaderData = (<SpriteMask>preElement.component).shaderData;
+    const curShaderData = (<SpriteMask>curElement.component).shaderData;
     const textureProperty = SpriteMask._textureProperty;
     const alphaCutoffProperty = SpriteMask._alphaCutoffProperty;
 
-    if (
+    return (
       preShaderData.getTexture(textureProperty) === curShaderData.getTexture(textureProperty) &&
       preShaderData.getTexture(alphaCutoffProperty) === curShaderData.getTexture(alphaCutoffProperty)
-    ) {
-      return true;
-    }
-
-    return false;
+    );
   }
 
   updateVertices(element: SpriteMaskElement, vertices: Float32Array, vertexIndex: number): number {
