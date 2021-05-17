@@ -9,7 +9,8 @@ import { SpriteMaskBatcher } from "./SpriteMaskBatcher";
 export class SpriteMaskManager {
   private static _tempMasks: Set<SpriteMask> = new Set<SpriteMask>();
 
-  private _batcher: SpriteMaskBatcher = null;
+  _batcher: SpriteMaskBatcher = null;
+
   private _curCamera: Camera = null;
   private _allMasks: DisorderedArray<SpriteMask> = new DisorderedArray();
   private _previousMasks: DisorderedArray<SpriteMask> = new DisorderedArray();
@@ -95,7 +96,7 @@ export class SpriteMaskManager {
 
     if (curLen === 0) {
       for (let i = 0; i < newLen; ++i) {
-        this._preDrawMask(newElements[i], true);
+        newElements[i]._render(this._curCamera).isAdd = true;
       }
       return;
     }
@@ -114,24 +115,15 @@ export class SpriteMaskManager {
     for (let i = 0; i < newLen; ++i) {
       const element = newElements[i];
       if (!repeatMasks.has(element)) {
-        this._preDrawMask(element, true);
+        element._render(this._curCamera).isAdd = true;
       }
     }
 
     for (let i = 0; i < curLen; ++i) {
       const element = curElements[i];
       if (!repeatMasks.has(element)) {
-        this._preDrawMask(element, false);
+        element._render(this._curCamera).isAdd = false;
       }
-    }
-  }
-
-  private _preDrawMask(mask: SpriteMask, isAdd: boolean): void {
-    const element = mask._getElement();
-    if (element) {
-      element.isAdd = isAdd;
-      element.camera = this._curCamera;
-      this._batcher.drawElement(element);
     }
   }
 }

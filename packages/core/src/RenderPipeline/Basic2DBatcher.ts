@@ -170,7 +170,6 @@ export abstract class Basic2DBatcher {
       if (preElement === null) {
         vertexCount += triangleNum;
       } else {
-        debugger;
         if (this._canBatch(preElement, curElement)) {
           vertexCount += triangleNum;
         } else {

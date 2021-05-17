@@ -57,7 +57,6 @@ export class SpriteBatcher extends Basic2DBatcher {
   }
 
   _checkBatchByMask(sr1: SpriteRenderer, sr2: SpriteRenderer): boolean {
-    debugger;
     const maskInteraction1 = sr1.maskInteraction;
     if (maskInteraction1 !== sr2.maskInteraction) {
       return false;

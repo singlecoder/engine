@@ -34,9 +34,10 @@ export class SpriteMask extends Renderer {
   private _sprite: Sprite = null;
   @assignmentClone
   private _alphaCutoff: number = 0.5;
+
   /** The mask layers the sprite mask influence to. */
   @assignmentClone
-  private influenceLayers: number = SpriteMaskLayer.Everything;
+  influenceLayers: number = SpriteMaskLayer.Everything;
 
   /**
    * The Sprite used to define the mask.
@@ -105,12 +106,8 @@ export class SpriteMask extends Renderer {
    * @override
    * @inheritdoc
    */
-  _render(camera: Camera): void {}
-
-  /**
-   * @internal
-   */
-  _getElement(): SpriteMaskElement {
+  _render(camera: Camera): SpriteMaskElement {
+    //todo: return value
     const sprite = this.sprite;
     if (!sprite) {
       return null;
@@ -143,9 +140,11 @@ export class SpriteMask extends Renderer {
 
     this.shaderData.setTexture(SpriteMask._textureProperty, texture);
     const spriteMaskElementPool = this._engine._spriteMaskElementPool;
-    const spriteMaskElement = spriteMaskElementPool.getFromPool();
-    spriteMaskElement.setValue(this, positions, sprite._uv, sprite._triangles, this.getMaterial());
-    return spriteMaskElement;
+    const maskElement = spriteMaskElementPool.getFromPool();
+    maskElement.setValue(this, positions, sprite._uv, sprite._triangles, this.getMaterial());
+    maskElement.camera = camera;
+    this._engine.spriteMaskManager._batcher.drawElement(maskElement);
+    return maskElement;
   }
 
   private _createMaterial(): Material {
