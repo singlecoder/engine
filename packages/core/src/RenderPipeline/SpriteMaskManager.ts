@@ -51,7 +51,6 @@ export class SpriteMaskManager {
       const allMasks = camera._renderPipeline._allSpriteMasks;
       const commonLayer = preMaskLayer & curMaskLayer;
       const addLayer = curMaskLayer & ~preMaskLayer;
-      const reduceLayer = preMaskLayer & ~curMaskLayer;
 
       const allMaskElements = allMasks._elements;
       for (let i = 0, n = allMasks.length; i < n; i++) {
@@ -69,7 +68,7 @@ export class SpriteMaskManager {
           continue;
         }
 
-        if (influenceLayers & reduceLayer) {
+        if (!(influenceLayers & curMaskLayer)) {
           const maskRenderElement = mask._maskElement;
           maskRenderElement.isAdd = false;
           this._batcher.drawElement(maskRenderElement);
