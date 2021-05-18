@@ -58,9 +58,9 @@ export abstract class Basic2DBatcher {
   }
 
   flush(engine: Engine): void {
-    const { _batchedQueue } = this;
+    const batchedQueue = this._batchedQueue;
 
-    if (_batchedQueue.length === 0) {
+    if (batchedQueue.length === 0) {
       return;
     }
 
@@ -71,8 +71,8 @@ export abstract class Basic2DBatcher {
       this._flushId++;
     }
 
+    batchedQueue.length = 0;
     this._subMeshPool.resetPool();
-    this._batchedQueue.length = 0;
     this._vertexCount = 0;
     this._elementCount = 0;
   }

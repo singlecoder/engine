@@ -68,11 +68,10 @@ export class SpriteMaskManager {
           continue;
         }
 
-        if (!(influenceLayers & curMaskLayer)) {
+        if (influenceLayers & preMaskLayer && !(influenceLayers & curMaskLayer)) {
           const maskRenderElement = mask._maskElement;
           maskRenderElement.isAdd = false;
           this._batcher.drawElement(maskRenderElement);
-          continue;
         }
       }
     }
