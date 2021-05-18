@@ -21,6 +21,9 @@ export class SpriteMask extends Renderer {
 
   private static _tempVec3: Vector3 = new Vector3();
 
+  /** @internal */
+  _maskElement: SpriteMaskElement;
+
   @deepClone
   private _positions: Vector3[] = [new Vector3(), new Vector3(), new Vector3(), new Vector3()];
   @ignoreClone
@@ -78,22 +81,6 @@ export class SpriteMask extends Renderer {
    * @override
    * @inheritdoc
    */
-  _onEnable(): void {
-    this.engine.spriteMaskManager.addMask(this);
-  }
-
-  /**
-   * @override
-   * @inheritdoc
-   */
-  _onDisable(): void {
-    this.engine.spriteMaskManager.removeMask(this);
-  }
-
-  /**
-   * @override
-   * @inheritdoc
-   */
   _onDestroy(): void {
     this._worldMatrixDirtyFlag.destroy();
     super._onDestroy();
@@ -103,8 +90,7 @@ export class SpriteMask extends Renderer {
    * @override
    * @inheritdoc
    */
-  _render(camera: Camera): SpriteMaskElement {
-    //todo: return value
+  _render(camera: Camera): void {
     const sprite = this.sprite;
     if (!sprite) {
       return null;
@@ -140,7 +126,8 @@ export class SpriteMask extends Renderer {
     const maskElement = spriteMaskElementPool.getFromPool();
     maskElement.setValue(this, positions, sprite._uv, sprite._triangles, this.getMaterial());
     maskElement.camera = camera;
-    this._engine.spriteMaskManager._batcher.drawElement(maskElement);
-    return maskElement;
+
+    camera._renderPipeline._allSpriteMasks.add(this);
+    this._maskElement = maskElement;
   }
 }

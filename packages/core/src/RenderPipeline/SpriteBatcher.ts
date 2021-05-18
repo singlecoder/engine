@@ -32,10 +32,7 @@ export class SpriteBatcher extends Basic2DBatcher {
 
     // Compare renderer property
     const textureProperty = SpriteBatcher._textureProperty;
-    if (
-      preRenderer.shaderData.getTexture(textureProperty) !==
-      curRenderer.shaderData.getTexture(textureProperty)
-    ) {
+    if (preRenderer.shaderData.getTexture(textureProperty) !== curRenderer.shaderData.getTexture(textureProperty)) {
       return false;
     }
 
@@ -92,7 +89,7 @@ export class SpriteBatcher extends Basic2DBatcher {
 
       const renderer = <SpriteRenderer>spriteElement.component;
       const camera = spriteElement.camera;
-      maskManager.preRender(renderer, camera);
+      maskManager.preRender(camera, renderer);
 
       const compileMacros = Shader._compileMacros;
       compileMacros.clear();
