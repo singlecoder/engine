@@ -27,6 +27,7 @@ import { RenderState } from "./shader/state/RenderState";
 import { Texture2D, TextureCubeFace, TextureCubeMap, TextureFormat } from "./texture";
 import { ModelMesh, PrimitiveMesh } from "./mesh";
 import { CompareFunction } from "./shader";
+import { InputManager } from "./input/InputManager";
 import { IPhysics } from "@oasis-engine/design";
 import { PhysicsManager } from "./physics";
 
@@ -42,7 +43,6 @@ export class Engine extends EventDispatcher {
   readonly physicsManager: PhysicsManager;
 
   _componentsManager: ComponentsManager = new ComponentsManager();
-  _inputManager: InputManager;
   _hardwareRenderer: IHardwareRenderer;
   _lastRenderState: RenderState = new RenderState();
   _renderElementPool: ClassPool<RenderElement> = new ClassPool(RenderElement);
@@ -66,6 +66,8 @@ export class Engine extends EventDispatcher {
   _shaderProgramPools: ShaderProgramPool[] = [];
   /** @internal */
   _spriteMaskManager: SpriteMaskManager;
+  /** @internal */
+  _inputManager: InputManager;
 
   protected _canvas: Canvas;
   private _resourceManager: ResourceManager = new ResourceManager(this);
@@ -177,7 +179,7 @@ export class Engine extends EventDispatcher {
     this._spriteMaskManager = new SpriteMaskManager(this);
     this._spriteDefaultMaterial = this._createSpriteMaterial();
     this._spriteMaskDefaultMaterial = this._createSpriteMaskMaterial();
-    /** Init InputManager. */
+
     this._inputManager = new InputManager(this);
 
     const whitePixel = new Uint8Array([255, 255, 255, 255]);
@@ -251,11 +253,7 @@ export class Engine extends EventDispatcher {
     const scene = this._sceneManager._activeScene;
     const componentsManager = this._componentsManager;
     if (scene) {
-      const cameras = scene._activeCameras;
-      if (cameras.length > 0) {
-        /** Sort on priority. */
-        cameras.sort((camera1, camera2) => camera1.priority - camera2.priority);
-      }
+      scene._activeCameras.sort((camera1, camera2) => camera1.priority - camera2.priority);
 
       componentsManager.callScriptOnStart();
       if (this.physicsManager) {
@@ -263,11 +261,11 @@ export class Engine extends EventDispatcher {
         this.physicsManager._update(deltaTime);
         componentsManager.callColliderOnLateUpdate();
       }
+      this._inputManager._update();
       componentsManager.callScriptOnUpdate(deltaTime);
       componentsManager.callAnimationUpdate(deltaTime);
       componentsManager.callScriptOnLateUpdate(deltaTime);
 
-      this._inputManager._update();
       this._render(scene);
     }
 
@@ -293,7 +291,7 @@ export class Engine extends EventDispatcher {
     if (this._sceneManager) {
       this._whiteTexture2D.destroy(true);
       this._whiteTextureCube.destroy(true);
-
+      this._inputManager._destroy();
       this.trigger(new Event("shutdown", this));
       engineFeatureManager.callFeatureMethod(this, "shutdown", [this]);
 
