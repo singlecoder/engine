@@ -18,6 +18,10 @@ import { Canvas2dCanvas } from "./Canvas2dCanvas";
 import { CanvasCapability } from "./CanvasCapability";
 import { CanvasTexture2D } from "./CanvasTexture2D";
 
+export interface CanvasRendererOptions {
+  alpha? :boolean
+}
+
 export class CanvasRenderer implements IHardwareRenderer {
   private static _tempVec30: Vector3 = new Vector3();
   private static _tempVec31: Vector3 = new Vector3();
@@ -30,6 +34,7 @@ export class CanvasRenderer implements IHardwareRenderer {
   private static _doublePI: number = Math.PI * 2;
   private static _reciprocalPI: number = 1.0 / Math.PI;
 
+  private _options: CanvasRendererOptions;
   private _ctx: CanvasRenderingContext2D;
   private _capability: CanvasCapability;
   private _webCanvas: Canvas2dCanvas;
@@ -50,14 +55,20 @@ export class CanvasRenderer implements IHardwareRenderer {
     return this._capability;
   }
 
+  constructor(options: CanvasRendererOptions = {}) {
+    this._options = options;
+  }
+
   canIUse(capabilityType: CanvasCapability) {
     return false;
   }
 
   init(canvas: Canvas) {
+    const option = this._options;
+    option.alpha === undefined && (option.alpha = false);
     const webCanvas = this._webCanvas = canvas as Canvas2dCanvas;
     const realCanvas = this._realCanvas = webCanvas._webCanvas;
-    this._ctx = realCanvas.getContext("2d");
+    this._ctx = realCanvas.getContext("2d", option);
     this._capability = new CanvasCapability(this);
   }
 

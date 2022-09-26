@@ -1,6 +1,6 @@
 import { Engine } from "@oasis-engine/core";
 import { Canvas2dCanvas } from "./Canvas2dCanvas";
-import { CanvasRenderer } from "./CanvasRenderer";
+import { CanvasRenderer, CanvasRendererOptions } from "./CanvasRenderer";
 
 /**
  * Canvas 2d platform engine.
@@ -10,11 +10,11 @@ export class CanvasEngine extends Engine {
    * Create an engine suitable for the canvas 2d platform.
    * @param canvas - Native web canvas
    */
-  constructor(canvas: string | HTMLCanvasElement | OffscreenCanvas) {
+  constructor(canvas: string | HTMLCanvasElement | OffscreenCanvas, canvasRendererOptions?: CanvasRendererOptions) {
     const webCanvas = new Canvas2dCanvas(
       <HTMLCanvasElement | OffscreenCanvas>(typeof canvas === "string" ? document.getElementById(canvas) : canvas)
     );
-    const hardwareRenderer = new CanvasRenderer();
+    const hardwareRenderer = new CanvasRenderer(canvasRendererOptions);
     super(webCanvas, hardwareRenderer);
   }
 
