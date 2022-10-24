@@ -1,8 +1,5 @@
 import { AssetPromise, AssetType, Font, Loader, LoadItem, resourceLoader, ResourceManager } from "@oasis-engine/core";
 
-/**
- * @todo temp for oasis editor, should delete
- */
 @resourceLoader(AssetType.Font, ["font"], false)
 class FontLoader extends Loader<Font> {
   load(item: LoadItem, resourceManager: ResourceManager): AssetPromise<Font> {
