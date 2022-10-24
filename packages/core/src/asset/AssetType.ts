@@ -44,5 +44,7 @@ export enum AssetType {
   /** HDR to cube. */
   HDR = "HDR",
   /** Font. */
-  Font = "font"
+  Font = "font",
+  /** Source Font, include ttf、 otf and woff. */
+  SourceFont = "source-font"
 }
