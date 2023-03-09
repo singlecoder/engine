@@ -16,8 +16,6 @@ export class ShaderPass extends ShaderPart {
 
   /** @internal */
   _shaderPassId: number = 0;
-  /** @internal */
-  _canBatch: boolean = true;
 
   private _vertexSource: string;
   private _fragmentSource: string;
