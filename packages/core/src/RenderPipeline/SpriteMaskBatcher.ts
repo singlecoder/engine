@@ -17,10 +17,6 @@ export class SpriteMaskBatcher extends Basic2DBatcher {
   }
 
   canBatch(preElement: RenderElement, curElement: RenderElement): boolean {
-    if (!this._engine._canSpriteBatch || curElement.shaderPass.getTagValue(this._disableBatchTagKey)) {
-      return false;
-    }
-
     const preSpriteData = <SpriteMaskRenderData>preElement.data;
     const curSpriteData = <SpriteMaskRenderData>curElement.data;
 
