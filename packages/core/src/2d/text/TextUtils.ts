@@ -149,7 +149,7 @@ export class TextUtils {
           // If it is a word before, need to handle the previous word and line
           if (word.length > 0) {
             if (lineWidth + wordWidth > wrapWidth) {
-              this._pushCharsToLines(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
+              this._pushLine(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
               notFirstLine = true;
               width < lineWidth && (width = lineWidth);
               line = word;
@@ -169,7 +169,7 @@ export class TextUtils {
 
           // Handle cur char.
           if (lineWidth + w > wrapWidth && lineWidth > 0) {
-            this._pushCharsToLines(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
+            this._pushLine(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
             notFirstLine = true;
             width < lineWidth && (width = lineWidth);
             if (isSpace) {
@@ -190,12 +190,12 @@ export class TextUtils {
         } else {
           if (wordWidth + charInfo.w > wrapWidth) {
             if (lineWidth > 0) {
-              this._pushCharsToLines(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
+              this._pushLine(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
               width < lineWidth && (width = lineWidth);
               line = "";
               lineWidth = lineMaxAscent = lineMaxDescent = 0;
             }
-            this._pushCharsToLines(lines, lineWidths, lineMaxSizes, word, wordWidth, wordMaxAscent, wordMaxDescent);
+            this._pushLine(lines, lineWidths, lineMaxSizes, word, wordWidth, wordMaxAscent, wordMaxDescent);
             notFirstLine = true;
             width < wordWidth && (width = wordWidth);
             word = char;
@@ -215,10 +215,10 @@ export class TextUtils {
         // If the total width from chars and wordChars exceed wrap width
         if (lineWidth + wordWidth > wrapWidth) {
           // Push chars to a single line
-          this._pushCharsToLines(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
+          this._pushLine(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
           lineWidth = 0;
           // Push wordChars to a single line
-          this._pushCharsToLines(lines, lineWidths, lineMaxSizes, word, wordWidth, wordMaxAscent, wordMaxDescent);
+          this._pushLine(lines, lineWidths, lineMaxSizes, word, wordWidth, wordMaxAscent, wordMaxDescent);
           width = Math.max(width, lineWidth, wordWidth);
         } else {
           // Merge to chars
@@ -230,7 +230,7 @@ export class TextUtils {
       }
 
       if (lineWidth > 0) {
-        this._pushCharsToLines(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
+        this._pushLine(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
         width < lineWidth && (width = lineWidth);
       }
     }
@@ -427,7 +427,7 @@ export class TextUtils {
     return charInfo;
   }
 
-  private static _pushCharsToLines(
+  private static _pushLine(
     lines: string[],
     lineWidths: number[],
     lineMaxSizes: FontSizeInfo[],
