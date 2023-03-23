@@ -220,7 +220,6 @@ export class TextUtils {
           lineWidth = 0;
           // Push wordChars to a single line.
           this._pushCharsToLines(lines, lineWidths, lineMaxSizes, word, wordWidth, wordMaxAscent, wordMaxDescent);
-          notFirstLine = true;
           width = Math.max(width, lineWidth, wordWidth);
         } else {
           // Merge to chars.
@@ -233,7 +232,6 @@ export class TextUtils {
 
       if (lineWidth > 0) {
         this._pushCharsToLines(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
-        notFirstLine = true;
         width < lineWidth && (width = lineWidth);
       }
     }
