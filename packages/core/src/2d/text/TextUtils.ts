@@ -117,15 +117,15 @@ export class TextUtils {
     for (let i = 0, n = subTexts.length; i < n; i++) {
       const subText = subTexts[i];
 
-      let line = "";
-      let lineWidth = 0;
-      let lineMaxAscent = 0;
-      let lineMaxDescent = 0;
-
       let word = "";
       let wordWidth = 0;
       let wordMaxAscent = 0;
       let wordMaxDescent = 0;
+
+      let line = "";
+      let lineWidth = 0;
+      let lineMaxAscent = 0;
+      let lineMaxDescent = 0;
 
       let notFirstLine = false;
 
