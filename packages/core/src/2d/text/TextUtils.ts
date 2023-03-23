@@ -11,12 +11,11 @@ import { TextRenderer } from "./TextRenderer";
  * TextUtils includes some helper function for text.
  */
 export class TextUtils {
-  private static _lines = new Array<string>();
-  private static _lineWidths = new Array<number>();
-  private static _lineMaxSizes = new Array<FontSizeInfo>();
-
+  private static _lines: string[] = [];
+  private static _lineWidths: number[] = [];
+  private static _lineMaxSizes: FontSizeInfo[] = [];
   /** @internal */
-  static _genericFontFamilies: Array<string> = [
+  static _genericFontFamilies: string[] = [
     "serif",
     "sans-serif",
     "monospace",
@@ -429,16 +428,16 @@ export class TextUtils {
   }
 
   private static _pushCharsToLines(
-    lines: Array<string>,
-    lineWidths: Array<number>,
-    lineMaxSizes: Array<FontSizeInfo>,
-    chars: string,
-    charsWidth: number,
+    lines: string[],
+    lineWidths: number[],
+    lineMaxSizes: FontSizeInfo[],
+    line: string,
+    lineWidth: number,
     ascent: number,
     descent: number
   ): void {
-    lines.push(chars);
-    lineWidths.push(charsWidth);
+    lines.push(line);
+    lineWidths.push(lineWidth);
     lineMaxSizes.push({
       ascent,
       descent,
