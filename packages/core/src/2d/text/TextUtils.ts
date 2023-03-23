@@ -11,9 +11,6 @@ import { TextRenderer } from "./TextRenderer";
  * TextUtils includes some helper function for text.
  */
 export class TextUtils {
-  private static _lines: string[] = [];
-  private static _lineWidths: number[] = [];
-  private static _lineMaxSizes: FontSizeInfo[] = [];
   /** @internal */
   static _genericFontFamilies: string[] = [
     "serif",
@@ -101,12 +98,9 @@ export class TextUtils {
     const fontSizeInfo = TextUtils.measureFont(fontString);
     const subTexts = renderer.text.split(/(?:\r\n|\r|\n)/);
 
-    const lines = TextUtils._lines;
-    const lineWidths = TextUtils._lineWidths;
-    const lineMaxSizes = TextUtils._lineMaxSizes;
-    lines.length = 0;
-    lineWidths.length = 0;
-    lineMaxSizes.length = 0;
+    const lines = new Array<string>();
+    const lineWidths = new Array<number>();
+    const lineMaxSizes = new Array<FontSizeInfo>();
 
     const pixelsPerUnit = Engine._pixelsPerUnit;
     const lineHeight = fontSizeInfo.size + renderer.lineSpacing * pixelsPerUnit;
@@ -150,8 +144,8 @@ export class TextUtils {
           if (word.length > 0) {
             if (lineWidth + wordWidth > wrapWidth) {
               this._pushLine(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
-              notFirstLine = true;
               textWidth = Math.max(textWidth, lineWidth);
+              notFirstLine = true;
               line = word;
               lineWidth = wordWidth;
               lineMaxAscent = wordMaxAscent;
@@ -171,8 +165,8 @@ export class TextUtils {
           // At least one char in a line
           if (lineWidth + w > wrapWidth && lineWidth > 0) {
             this._pushLine(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
-            notFirstLine = true;
             textWidth = Math.max(textWidth, lineWidth);
+            notFirstLine = true;
             if (isSpace) {
               line = "";
               lineWidth = lineMaxAscent = lineMaxDescent = 0;
@@ -197,8 +191,8 @@ export class TextUtils {
               lineWidth = lineMaxAscent = lineMaxDescent = 0;
             }
             this._pushLine(lines, lineWidths, lineMaxSizes, word, wordWidth, wordMaxAscent, wordMaxDescent);
-            notFirstLine = true;
             textWidth = Math.max(textWidth, wordWidth);
+            notFirstLine = true;
             word = char;
             wordWidth = charInfo.xAdvance;
             wordMaxAscent = ascent;
@@ -217,6 +211,8 @@ export class TextUtils {
         if (lineWidth + wordWidth > wrapWidth) {
           // Push chars to a single line
           this._pushLine(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
+          textWidth = Math.max(textWidth, lineWidth);
+
           lineWidth = 0;
           // Push wordChars to a single line
           this._pushLine(lines, lineWidths, lineMaxSizes, word, wordWidth, wordMaxAscent, wordMaxDescent);
