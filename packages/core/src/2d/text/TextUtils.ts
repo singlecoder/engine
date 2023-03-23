@@ -168,6 +168,7 @@ export class TextUtils {
           }
 
           // Handle char
+          // At least one char in a line
           if (lineWidth + w > wrapWidth && lineWidth > 0) {
             this._pushLine(lines, lineWidths, lineMaxSizes, line, lineWidth, lineMaxAscent, lineMaxDescent);
             notFirstLine = true;
