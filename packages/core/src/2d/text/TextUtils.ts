@@ -159,8 +159,8 @@ export class TextUtils {
             } else {
               line += word;
               lineWidth += wordWidth;
-              lineMaxAscent < wordMaxAscent && (lineMaxAscent = wordMaxAscent);
-              lineMaxDescent < wordMaxDescent && (lineMaxDescent = wordMaxDescent);
+              lineMaxAscent = Math.max(lineMaxAscent, wordMaxAscent);
+              lineMaxDescent = Math.max(lineMaxDescent, wordMaxDescent);
             }
 
             word = "";
@@ -184,8 +184,8 @@ export class TextUtils {
           } else {
             line += char;
             lineWidth += charInfo.xAdvance;
-            lineMaxAscent < ascent && (lineMaxAscent = ascent);
-            lineMaxDescent < descent && (lineMaxDescent = descent);
+            lineMaxAscent = Math.max(lineMaxAscent, ascent);
+            lineMaxDescent = Math.max(lineMaxDescent, descent);
           }
         } else {
           if (wordWidth + charInfo.w > wrapWidth) {
@@ -205,8 +205,8 @@ export class TextUtils {
           } else {
             word += char;
             wordWidth += charInfo.xAdvance;
-            wordMaxAscent < ascent && (wordMaxAscent = lineMaxAscent = ascent);
-            wordMaxDescent < descent && (wordMaxDescent = lineMaxDescent = descent);
+            wordMaxAscent = lineMaxAscent = Math.max(wordMaxAscent, ascent);
+            wordMaxDescent = lineMaxDescent = Math.max(wordMaxDescent, descent);
           }
         }
       }
@@ -224,8 +224,8 @@ export class TextUtils {
           // Merge to chars
           line += word;
           lineWidth += wordWidth;
-          lineMaxAscent < wordMaxAscent && (lineMaxAscent = wordMaxAscent);
-          lineMaxDescent < wordMaxDescent && (lineMaxDescent = wordMaxDescent);
+          lineMaxAscent = Math.max(lineMaxAscent, wordMaxAscent);
+          lineMaxDescent = Math.max(lineMaxDescent, wordMaxDescent);
         }
       }
 
