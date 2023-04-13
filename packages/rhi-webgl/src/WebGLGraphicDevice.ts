@@ -1,10 +1,13 @@
 import {
+  BufferBindFlag,
+  BufferUsage,
   CameraClearFlags,
   Canvas,
   ColorWriteMask,
   Engine,
   GLCapabilityType,
   IHardwareRenderer,
+  IPlatformBuffer,
   IPlatformRenderTarget,
   IPlatformTexture2D,
   IPlatformTextureCube,
@@ -17,9 +20,10 @@ import {
   Texture2D,
   Texture2DArray,
   TextureCube
-} from "@oasis-engine/core";
-import { IPlatformPrimitive } from "@oasis-engine/design";
-import { Color, Vector4 } from "@oasis-engine/math";
+} from "@galacean/engine-core";
+import { IPlatformPrimitive } from "@galacean/engine-design";
+import { Color, Vector4 } from "@galacean/engine-math";
+import { GLBuffer } from "./GLBuffer";
 import { GLCapability } from "./GLCapability";
 import { GLExtensions } from "./GLExtensions";
 import { GLPrimitive } from "./GLPrimitive";
@@ -45,46 +49,49 @@ export enum WebGLMode {
 }
 
 /**
- * WebGL renderer options.
+ * WebGL graphic device options.
  */
-export interface WebGLRendererOptions extends WebGLContextAttributes {
+export interface WebGLGraphicDeviceOptions extends WebGLContextAttributes {
   /** WebGL mode.*/
   webGLMode?: WebGLMode;
+
   /**
    * @internal
-   * iOS 15 webgl implement has bug, maybe should force call flush command buffer, for exmaple iPhone13(iOS 15.4.1).
+   * iOS 15 webgl implement has bug, maybe should force call flush command buffer, for example iPhone13(iOS 15.4.1).
    */
   _forceFlush?: boolean;
 }
 
 /**
- * WebGL renderer, including WebGL1.0 and WebGL2.0.
+ * WebGL graphic device, including WebGL1.0 and WebGL2.0.
  */
-export class WebGLRenderer implements IHardwareRenderer {
+export class WebGLGraphicDevice implements IHardwareRenderer {
   /** @internal */
-  _readFrameBuffer: WebGLFramebuffer;
+  _readFrameBuffer: WebGLFramebuffer = null;
   /** @internal */
   _enableGlobalDepthBias: boolean = false;
+  /** @internal */
+  _currentBindShaderProgram: any;
 
-  _currentBind: any;
-
-  private _options: WebGLRendererOptions;
+  private _options: WebGLGraphicDeviceOptions;
   private _gl: (WebGLRenderingContext & WebGLExtension) | WebGL2RenderingContext;
   private _renderStates;
   private _extensions;
   private _capability: GLCapability;
   private _isWebGL2: boolean;
   private _renderer: string;
-  private _webCanvas: WebCanvas;
+  private _webCanvas: HTMLCanvasElement | OffscreenCanvas;
 
   private _activeTextureID: number;
   private _activeTextures: GLTexture[] = new Array(32);
 
-  // cache value
   private _lastViewport: Vector4 = new Vector4(null, null, null, null);
   private _lastScissor: Vector4 = new Vector4(null, null, null, null);
   private _lastClearColor: Color = new Color(null, null, null, null);
   private _scissorEnable: boolean = false;
+
+  private _onDeviceLost: () => void;
+  private _onDeviceRestored: () => void;
 
   get isWebGL2(): boolean {
     return this._isWebGL2;
@@ -114,7 +121,7 @@ export class WebGLRenderer implements IHardwareRenderer {
     return this.capability.canIUseMoreJoints;
   }
 
-  constructor(initializeOptions: WebGLRendererOptions = {}) {
+  constructor(initializeOptions: WebGLGraphicDeviceOptions = {}) {
     const options = {
       webGLMode: WebGLMode.Auto,
       stencil: true,
@@ -132,14 +139,25 @@ export class WebGLRenderer implements IHardwareRenderer {
       }
     }
     this._options = options;
+
+    this._onWebGLContextLost = this._onWebGLContextLost.bind(this);
+    this._onWebGLContextRestored = this._onWebGLContextRestored.bind(this);
   }
 
-  init(canvas: Canvas): void {
+  init(canvas: Canvas, onDeviceLost: () => void, onDeviceRestored: () => void): void {
     const options = this._options;
-    const webCanvas = (this._webCanvas = (canvas as WebCanvas)._webCanvas);
+    const webCanvas = (canvas as WebCanvas)._webCanvas;
     const webGLMode = options.webGLMode;
-    let gl: (WebGLRenderingContext & WebGLExtension) | WebGL2RenderingContext;
 
+    this._onDeviceLost = onDeviceLost;
+    this._onDeviceRestored = onDeviceRestored;
+    webCanvas.addEventListener("webglcontextlost", this._onWebGLContextLost, false);
+    webCanvas.addEventListener("webglcontextrestored", this._onWebGLContextRestored, false);
+    webCanvas.addEventListener("webglcontextcreationerror", this._onContextCreationError, false);
+
+    this._webCanvas = webCanvas;
+
+    let gl: (WebGLRenderingContext & WebGLExtension) | WebGL2RenderingContext;
     if (webGLMode == WebGLMode.Auto || webGLMode == WebGLMode.WebGL2) {
       gl = webCanvas.getContext("webgl2", options);
       if (!gl && (typeof OffscreenCanvas === "undefined" || !(webCanvas instanceof OffscreenCanvas))) {
@@ -168,17 +186,7 @@ export class WebGLRenderer implements IHardwareRenderer {
     }
 
     this._gl = gl;
-    this._activeTextureID = gl.TEXTURE0;
-    this._renderStates = new GLRenderStates(gl);
-    this._extensions = new GLExtensions(this);
-    this._capability = new GLCapability(this);
-    // Make sure the active texture in gl context is on default, because gl context may be used in other webgl renderer.
-    gl.activeTexture(gl.TEXTURE0);
-
-    const debugRenderInfo = gl.getExtension("WEBGL_debug_renderer_info");
-    if (debugRenderInfo != null) {
-      this._renderer = gl.getParameter(debugRenderInfo.UNMASKED_RENDERER_WEBGL);
-    }
+    this._initGLState(gl);
   }
 
   createPlatformPrimitive(primitive: Mesh): IPlatformPrimitive {
@@ -199,6 +207,15 @@ export class WebGLRenderer implements IHardwareRenderer {
 
   createPlatformRenderTarget(target: RenderTarget): IPlatformRenderTarget {
     return new GLRenderTarget(this, target);
+  }
+
+  createPlatformBuffer(
+    type: BufferBindFlag,
+    byteLength: number,
+    bufferUsage: BufferUsage = BufferUsage.Static,
+    data?: ArrayBuffer | ArrayBufferView
+  ): IPlatformBuffer {
+    return new GLBuffer(this, type, byteLength, bufferUsage, data);
   }
 
   requireExtension(ext) {
@@ -241,16 +258,18 @@ export class WebGLRenderer implements IHardwareRenderer {
     }
   }
 
-  colorMask(r, g, b, a) {
+  colorMask(r: boolean, g: boolean, b: boolean, a: boolean): void {
     this._gl.colorMask(r, g, b, a);
   }
 
   clearRenderTarget(engine: Engine, clearFlags: CameraClearFlags, clearColor: Color) {
     const gl = this._gl;
+
     const {
       blendState: { targetBlendState },
       depthState,
       stencilState
+      // @ts-ignore
     } = engine._lastRenderState;
     let clearFlag = 0;
     if (clearFlags & CameraClearFlags.Color) {
@@ -347,5 +366,65 @@ export class WebGLRenderer implements IHardwareRenderer {
     this._gl.flush();
   }
 
-  destroy() {}
+  forceLoseDevice(): void {
+    const extension = this.requireExtension(GLCapabilityType.WEBGL_lose_context);
+    extension.loseContext();
+  }
+
+  forceRestoreDevice(): void {
+    const extension = this.requireExtension(GLCapabilityType.WEBGL_lose_context);
+    extension.restoreContext();
+  }
+
+  resetState(): void {
+    this._readFrameBuffer = null;
+    this._enableGlobalDepthBias = false;
+    this._currentBindShaderProgram = null;
+
+    const activeTextures = this._activeTextures;
+    for (let i = 0, n = activeTextures.length; i < n; i++) {
+      activeTextures[i] = null;
+    }
+
+    this._lastViewport.set(null, null, null, null);
+    this._lastScissor.set(null, null, null, null);
+    this._lastClearColor.set(null, null, null, null);
+    this._scissorEnable = false;
+
+    this._initGLState(this._gl);
+  }
+
+  protected _initGLState(gl: (WebGLRenderingContext & WebGLExtension) | WebGL2RenderingContext): void {
+    this._activeTextureID = gl.TEXTURE0;
+    this._renderStates = new GLRenderStates(gl);
+    this._extensions = new GLExtensions(this);
+    this._capability = new GLCapability(this);
+    // Make sure the active texture in gl context is on default, because gl context may be used in other webgl renderer.
+    gl.activeTexture(gl.TEXTURE0);
+
+    const debugRenderInfo = gl.getExtension("WEBGL_debug_renderer_info");
+    if (debugRenderInfo != null) {
+      this._renderer = gl.getParameter(debugRenderInfo.UNMASKED_RENDERER_WEBGL);
+    }
+  }
+
+  destroy(): void {
+    const webCanvas = this._webCanvas;
+    webCanvas.removeEventListener("webglcontextcreationerror", this._onContextCreationError, false);
+    webCanvas.removeEventListener("webglcontextlost", this._onWebGLContextLost, false);
+    webCanvas.removeEventListener("webglcontextrestored", this._onWebGLContextRestored, false);
+  }
+
+  private _onContextCreationError(event: WebGLContextEvent) {
+    console.error("WebGLRenderer: WebGL context could not be created. Reason: ", event.statusMessage);
+  }
+
+  private _onWebGLContextLost(event: WebGLContextEvent) {
+    event.preventDefault();
+    this._onDeviceLost();
+  }
+
+  private _onWebGLContextRestored(event: WebGLContextEvent) {
+    this._onDeviceRestored();
+  }
 }

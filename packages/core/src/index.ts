@@ -15,14 +15,16 @@ export { Camera } from "./Camera";
 export { Transform } from "./Transform";
 export { BoolUpdateFlag } from "./BoolUpdateFlag";
 export type { EngineSettings } from "./EngineSettings";
+export type { EngineConfiguration } from "./Engine";
 
 export { request } from "./asset/request";
 export { Loader } from "./asset/Loader";
+export { ContentRestorer } from "./asset/ContentRestorer";
 export { ResourceManager, resourceLoader } from "./asset/ResourceManager";
 export { AssetPromise } from "./asset/AssetPromise";
 export type { LoadItem } from "./asset/LoadItem";
 export { AssetType } from "./asset/AssetType";
-export { RefObject } from "./asset/RefObject";
+export { ReferResource } from "./asset/ReferResource";
 
 export * from "./RenderPipeline";
 export * from "./base";
@@ -52,6 +54,7 @@ export * from "./Layer";
 export * from "./clone/CloneManager";
 export * from "./renderingHardwareInterface/index";
 export * from "./physics/index";
+export * from "./Utils";
 
 // Export for CanvasRenderer plugin.
 export { Basic2DBatcher } from "./RenderPipeline/Basic2DBatcher";

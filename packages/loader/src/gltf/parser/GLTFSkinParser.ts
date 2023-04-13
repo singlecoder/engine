@@ -1,14 +1,14 @@
-import { Entity, Skin } from "@oasis-engine/core";
-import { Matrix } from "@oasis-engine/math";
-import { GLTFUtil } from "../GLTFUtil";
+import { Entity, Skin } from "@galacean/engine-core";
+import { Matrix } from "@galacean/engine-math";
+import { GLTFParserContext } from ".";
+import { GLTFUtils } from "../GLTFUtils";
 import { GLTFParser } from "./GLTFParser";
-import { GLTFParserContext } from "./GLTFParserContext";
 
 export class GLTFSkinParser extends GLTFParser {
   parse(context: GLTFParserContext): void {
-    const { glTFResource, gltf, buffers } = context;
+    const { glTFResource, glTF, buffers } = context;
     const { entities } = glTFResource;
-    const gltfSkins = gltf.skins;
+    const gltfSkins = glTF.skins;
 
     if (!gltfSkins) return;
 
@@ -23,8 +23,8 @@ export class GLTFSkinParser extends GLTFParser {
       skin.inverseBindMatrices.length = jointCount;
 
       // parse IBM
-      const accessor = gltf.accessors[inverseBindMatrices];
-      const buffer = GLTFUtil.getAccessorBuffer(context, gltf, accessor).data;
+      const accessor = glTF.accessors[inverseBindMatrices];
+      const buffer = GLTFUtils.getAccessorBuffer(context, glTF.bufferViews, accessor).data;
       for (let i = 0; i < jointCount; i++) {
         const inverseBindMatrix = new Matrix();
         inverseBindMatrix.copyFromArray(buffer, i * 16);
@@ -33,7 +33,15 @@ export class GLTFSkinParser extends GLTFParser {
 
       // get joints
       for (let i = 0; i < jointCount; i++) {
-        skin.joints[i] = entities[joints[i]].name;
+        const jointIndex = joints[i];
+        const jointName = entities[jointIndex].name;
+        skin.joints[i] = jointName;
+        // @todo Temporary solution, but it can alleviate the current BUG, and the skinning data mechanism of SkinnedMeshRenderer will be completely refactored in the future
+        for (let j = entities.length - 1; j >= 0; j--) {
+          if (jointIndex !== j && entities[j].name === jointName) {
+            entities[j].name = `${jointName}_${j}`;
+          }
+        }
       }
 
       // get skeleton

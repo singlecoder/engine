@@ -1,12 +1,13 @@
-import { IndexFormat, TypedArray, VertexElementFormat } from "@oasis-engine/core";
-import { Color, Vector2, Vector3, Vector4 } from "@oasis-engine/math";
-import { BufferInfo, GLTFParserContext } from "./parser/GLTFParserContext";
+import { IndexFormat, TypedArray, Utils, VertexElementFormat } from "@galacean/engine-core";
+import { Color, Vector2, Vector3, Vector4 } from "@galacean/engine-math";
+import { BufferDataRestoreInfo, RestoreDataAccessor } from "../GLTFContentRestorer";
 import { AccessorComponentType, AccessorType, IAccessor, IBufferView, IGLTF } from "./GLTFSchema";
+import { BufferInfo, GLTFParserContext } from "./parser/GLTFParserContext";
 
 /**
  * @internal
  */
-export class GLTFUtil {
+export class GLTFUtils {
   public static floatBufferToVector2Array(buffer: Float32Array): Vector2[] {
     const bufferLen = buffer.length;
     const array = new Array<Vector2>(bufferLen / 2);
@@ -49,24 +50,6 @@ export class GLTFUtil {
     }
 
     return colors;
-  }
-
-  /**
-   * Parse binary text for glb loader.
-   */
-  static decodeText(array: Uint8Array): string {
-    if (typeof TextDecoder !== "undefined") {
-      return new TextDecoder().decode(array);
-    }
-
-    // TextDecoder polyfill
-    let s = "";
-
-    for (let i = 0, il = array.length; i < il; i++) {
-      s += String.fromCharCode(array[i]);
-    }
-
-    return decodeURIComponent(encodeURIComponent(s));
   }
 
   /**
@@ -123,25 +106,25 @@ export class GLTFUtil {
       case AccessorComponentType.UNSIGNED_SHORT:
         return 1 / 65535;
       default:
-        throw new Error("Oasis.GLTFLoader: Unsupported normalized accessor component type.");
+        throw new Error("Galacean.GLTFLoader: Unsupported normalized accessor component type.");
     }
   }
 
-  static getAccessorBuffer(context: GLTFParserContext, gltf: IGLTF, accessor: IAccessor): BufferInfo {
+  static getAccessorBuffer(context: GLTFParserContext, bufferViews: IBufferView[], accessor: IAccessor): BufferInfo {
     const { buffers } = context;
-    const bufferViews = gltf.bufferViews;
 
     const componentType = accessor.componentType;
     const bufferView = bufferViews[accessor.bufferView];
 
-    const buffer = buffers[bufferView.buffer];
+    const bufferIndex = bufferView.buffer;
+    const buffer = buffers[bufferIndex];
     const bufferByteOffset = bufferView.byteOffset || 0;
     const byteOffset = accessor.byteOffset || 0;
 
-    const TypedArray = GLTFUtil.getComponentType(componentType);
-    const dataElmentSize = GLTFUtil.getAccessorTypeSize(accessor.type);
+    const TypedArray = GLTFUtils.getComponentType(componentType);
+    const dataElementSize = GLTFUtils.getAccessorTypeSize(accessor.type);
     const dataElementBytes = TypedArray.BYTES_PER_ELEMENT;
-    const elementStride = dataElmentSize * dataElementBytes;
+    const elementStride = dataElementSize * dataElementBytes;
     const accessorCount = accessor.count;
     const bufferStride = bufferView.byteStride;
 
@@ -157,17 +140,22 @@ export class GLTFUtil {
         const count = accessorCount * (bufferStride / dataElementBytes);
         const data = new TypedArray(buffer, offset, count);
         accessorBufferCache[bufferCacheKey] = bufferInfo = new BufferInfo(data, true, bufferStride);
+        bufferInfo.restoreInfo = new BufferDataRestoreInfo(
+          new RestoreDataAccessor(bufferIndex, TypedArray, offset, count)
+        );
       }
     } else {
       const offset = bufferByteOffset + byteOffset;
-      const count = accessorCount * dataElmentSize;
+      const count = accessorCount * dataElementSize;
       const data = new TypedArray(buffer, offset, count);
       bufferInfo = new BufferInfo(data, false, elementStride);
+      bufferInfo.restoreInfo = new BufferDataRestoreInfo(
+        new RestoreDataAccessor(bufferIndex, TypedArray, offset, count)
+      );
     }
 
     if (accessor.sparse) {
-      const data = GLTFUtil.processingSparseData(gltf, accessor, buffers, bufferInfo.data);
-      bufferInfo = new BufferInfo(data, false, bufferInfo.stride);
+      GLTFUtils.processingSparseData(bufferViews, accessor, buffers, bufferInfo);
     }
     return bufferInfo;
   }
@@ -176,17 +164,17 @@ export class GLTFUtil {
    * @deprecated
    * Get accessor data.
    */
-  static getAccessorData(gltf: IGLTF, accessor: IAccessor, buffers: ArrayBuffer[]): TypedArray {
-    const bufferViews = gltf.bufferViews;
+  static getAccessorData(glTF: IGLTF, accessor: IAccessor, buffers: ArrayBuffer[]): TypedArray {
+    const bufferViews = glTF.bufferViews;
     const bufferView = bufferViews[accessor.bufferView];
     const arrayBuffer = buffers[bufferView.buffer];
     const accessorByteOffset = accessor.hasOwnProperty("byteOffset") ? accessor.byteOffset : 0;
     const bufferViewByteOffset = bufferView.hasOwnProperty("byteOffset") ? bufferView.byteOffset : 0;
     const byteOffset = accessorByteOffset + bufferViewByteOffset;
-    const accessorTypeSize = GLTFUtil.getAccessorTypeSize(accessor.type);
+    const accessorTypeSize = GLTFUtils.getAccessorTypeSize(accessor.type);
     const length = accessorTypeSize * accessor.count;
     const byteStride = bufferView.byteStride ?? 0;
-    const arrayType = GLTFUtil.getComponentType(accessor.componentType);
+    const arrayType = GLTFUtils.getComponentType(accessor.componentType);
     let uint8Array;
     if (byteStride) {
       const accessorByteSize = accessorTypeSize * arrayType.BYTES_PER_ELEMENT;
@@ -214,7 +202,7 @@ export class GLTFUtil {
       const valuesByteOffset = (values.byteOffset ?? 0) + (valuesBufferView.byteOffset ?? 0);
       const valuesByteLength = valuesBufferView.byteLength;
 
-      const indicesType = GLTFUtil.getComponentType(indices.componentType);
+      const indicesType = GLTFUtils.getComponentType(indices.componentType);
       const indicesArray = new indicesType(
         indicesArrayBuffer,
         indicesByteOffset,
@@ -238,47 +226,55 @@ export class GLTFUtil {
   }
 
   static getBufferViewData(bufferView: IBufferView, buffers: ArrayBuffer[]): ArrayBuffer {
-    const { buffer, byteOffset = 0, byteLength } = bufferView;
-    const arrayBuffer = buffers[buffer];
+    const { byteOffset = 0 } = bufferView;
+    const arrayBuffer = buffers[bufferView.buffer];
 
-    return arrayBuffer.slice(byteOffset, byteOffset + byteLength);
+    return arrayBuffer.slice(byteOffset, byteOffset + bufferView.byteLength);
   }
 
   /**
    * Get accessor data.
    */
   static processingSparseData(
-    gltf: IGLTF,
+    bufferViews: IBufferView[],
     accessor: IAccessor,
     buffers: ArrayBuffer[],
-    originData: TypedArray
-  ): TypedArray {
-    const bufferViews = gltf.bufferViews;
-    const accessorTypeSize = GLTFUtil.getAccessorTypeSize(accessor.type);
-    const TypedArray = GLTFUtil.getComponentType(accessor.componentType);
-    const data = originData.slice();
+    bufferInfo: BufferInfo
+  ): void {
+    const { restoreInfo } = bufferInfo;
+    const accessorTypeSize = GLTFUtils.getAccessorTypeSize(accessor.type);
+    const TypedArray = GLTFUtils.getComponentType(accessor.componentType);
+    const data = bufferInfo.data.slice();
 
     const { count, indices, values } = accessor.sparse;
     const indicesBufferView = bufferViews[indices.bufferView];
     const valuesBufferView = bufferViews[values.bufferView];
-    const indicesArrayBuffer = buffers[indicesBufferView.buffer];
-    const valuesArrayBuffer = buffers[valuesBufferView.buffer];
+    const indicesBufferIndex = indicesBufferView.buffer;
+    const valuesBufferIndex = valuesBufferView.buffer;
+    const indicesArrayBuffer = buffers[indicesBufferIndex];
+    const valuesArrayBuffer = buffers[valuesBufferIndex];
     const indicesByteOffset = (indices.byteOffset ?? 0) + (indicesBufferView.byteOffset ?? 0);
     const indicesByteLength = indicesBufferView.byteLength;
     const valuesByteOffset = (values.byteOffset ?? 0) + (valuesBufferView.byteOffset ?? 0);
     const valuesByteLength = valuesBufferView.byteLength;
 
-    const IndexTypeArray = GLTFUtil.getComponentType(indices.componentType);
-    const indicesArray = new IndexTypeArray(
-      indicesArrayBuffer,
+    restoreInfo.typeSize = accessorTypeSize;
+    restoreInfo.sparseCount = count;
+
+    const IndexTypeArray = GLTFUtils.getComponentType(indices.componentType);
+
+    const indexLength = indicesByteLength / IndexTypeArray.BYTES_PER_ELEMENT;
+    const indicesArray = new IndexTypeArray(indicesArrayBuffer, indicesByteOffset, indexLength);
+    restoreInfo.sparseIndices = new RestoreDataAccessor(
+      indicesBufferIndex,
+      IndexTypeArray,
       indicesByteOffset,
-      indicesByteLength / IndexTypeArray.BYTES_PER_ELEMENT
+      indexLength
     );
-    const valuesArray = new TypedArray(
-      valuesArrayBuffer,
-      valuesByteOffset,
-      valuesByteLength / TypedArray.BYTES_PER_ELEMENT
-    );
+
+    const valueLength = valuesByteLength / TypedArray.BYTES_PER_ELEMENT;
+    const valuesArray = new TypedArray(valuesArrayBuffer, valuesByteOffset, valueLength);
+    restoreInfo.sparseValues = new RestoreDataAccessor(valuesBufferIndex, TypedArray, valuesByteOffset, valueLength);
 
     for (let i = 0; i < count; i++) {
       const replaceIndex = indicesArray[i];
@@ -287,7 +283,7 @@ export class GLTFUtil {
       }
     }
 
-    return data;
+    bufferInfo.data = data;
   }
 
   static getIndexFormat(type: AccessorComponentType): IndexFormat {
@@ -378,28 +374,14 @@ export class GLTFUtil {
     });
   }
 
-  static isAbsoluteUrl(url: string): boolean {
-    return /^(?:http|blob|data:|\/)/.test(url);
-  }
-
-  static parseRelativeUrl(baseUrl: string, relativeUrl: string): string {
-    if (GLTFUtil.isAbsoluteUrl(relativeUrl)) {
-      return relativeUrl;
-    }
-
-    const char0 = relativeUrl.charAt(0);
-    if (char0 === ".") {
-      return GLTFUtil._formatRelativePath(relativeUrl + relativeUrl);
-    }
-
-    return baseUrl.substring(0, baseUrl.lastIndexOf("/") + 1) + relativeUrl;
-  }
-
   /**
    * Parse the glb format.
    */
-  static parseGLB(glb: ArrayBuffer): {
-    gltf: IGLTF;
+  static parseGLB(
+    context: GLTFParserContext,
+    glb: ArrayBuffer
+  ): {
+    glTF: IGLTF;
     buffers: ArrayBuffer[];
   } {
     const UINT32_LENGTH = 4;
@@ -432,12 +414,13 @@ export class GLTFUtil {
     }
 
     const glTFData = new Uint8Array(glb, GLB_HEADER_LENGTH + 2 * UINT32_LENGTH, chunkLength);
-    const gltf: IGLTF = JSON.parse(GLTFUtil.decodeText(glTFData));
+    const glTF: IGLTF = JSON.parse(Utils.decodeText(glTFData));
 
     // read all buffers
     const buffers: ArrayBuffer[] = [];
     let byteOffset = GLB_HEADER_LENGTH + 2 * UINT32_LENGTH + chunkLength;
 
+    const restoreGLBBufferSlice = context.contentRestorer.glbBufferSlices;
     while (byteOffset < header.length) {
       chunkLength = dataView.getUint32(byteOffset, true);
       chunkType = dataView.getUint32(byteOffset + UINT32_LENGTH, true);
@@ -450,24 +433,27 @@ export class GLTFUtil {
       const currentOffset = byteOffset + 2 * UINT32_LENGTH;
       const buffer = glb.slice(currentOffset, currentOffset + chunkLength);
       buffers.push(buffer);
+      restoreGLBBufferSlice.push(new Vector2(currentOffset, chunkLength));
 
       byteOffset += chunkLength + 2 * UINT32_LENGTH;
     }
 
     return {
-      gltf,
+      glTF,
       buffers
     };
   }
 
-  private static _formatRelativePath(value: string): string {
-    const parts = value.split("/");
-    for (let i = 0, n = parts.length; i < n; i++) {
-      if (parts[i] == "..") {
-        parts.splice(i - 1, 2);
-        i -= 2;
-      }
-    }
-    return parts.join("/");
+  private static _formatRelativePath(path: string): string {
+    // For example input is "a/b", "/a/b", "./a/b", "./a/./b", "./a/../a/b", output is "a/b"
+    return path
+      .split("/")
+      .filter(Boolean)
+      .reduce((acc, cur) => {
+        if (cur === "..") acc.pop();
+        else if (cur !== ".") acc.push(cur);
+        return acc;
+      }, [])
+      .join("/");
   }
 }

@@ -1,4 +1,4 @@
-import { Material, Renderer } from "@oasis-engine/core";
+import { Material, Renderer } from "@galacean/engine-core";
 import { registerGLTFExtension } from "../parser/GLTFParser";
 import { GLTFParserContext } from "../parser/GLTFParserContext";
 import { GLTFExtensionMode, GLTFExtensionParser } from "./GLTFExtensionParser";
@@ -17,7 +17,7 @@ class KHR_materials_variants extends GLTFExtensionParser {
    */
   additiveParse(context: GLTFParserContext, renderer: Renderer, schema: IKHRMaterialVariants_Mapping): void {
     const {
-      gltf: {
+      glTF: {
         extensions: {
           KHR_materials_variants: { variants: variantNames }
         }

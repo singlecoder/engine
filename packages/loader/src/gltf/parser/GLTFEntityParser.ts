@@ -1,4 +1,4 @@
-import { Entity } from "@oasis-engine/core";
+import { Entity } from "@galacean/engine-core";
 import { GLTFResource } from "../GLTFResource";
 import { GLTFParser } from "./GLTFParser";
 import { GLTFParserContext } from "./GLTFParserContext";
@@ -10,7 +10,7 @@ export class GLTFEntityParser extends GLTFParser {
   parse(context: GLTFParserContext): void {
     const {
       glTFResource,
-      gltf: { nodes }
+      glTF: { nodes }
     } = context;
 
     const { engine } = glTFResource;
@@ -51,7 +51,7 @@ export class GLTFEntityParser extends GLTFParser {
 
   private _buildEntityTree(context: GLTFParserContext, glTFResource: GLTFResource): void {
     const {
-      gltf: { nodes }
+      glTF: { nodes }
     } = context;
     const { entities } = glTFResource;
 
@@ -70,7 +70,7 @@ export class GLTFEntityParser extends GLTFParser {
   }
 
   private _createSceneRoots(context: GLTFParserContext, glTFResource: GLTFResource): void {
-    const { scene: sceneID = 0, scenes } = context.gltf;
+    const { scene: sceneID = 0, scenes } = context.glTF;
     const { engine, entities } = glTFResource;
 
     if (!scenes) return;
