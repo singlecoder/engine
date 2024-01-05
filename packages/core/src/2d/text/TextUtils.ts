@@ -30,7 +30,7 @@ export class TextUtils {
   /** These characters are all tall to dhelp calculate the height required for text. */
   private static _measureString: string = "|ÉqÅ";
   private static _measureBaseline: string = "M";
-  private static _heightMultiplier: number = 1.6;
+  private static _heightMultiplier: number = 2;
   private static _baselineMultiplier: number = 1.4;
   private static _fontSizeInfoCache: Record<string, FontSizeInfo> = {};
   private static _textContext: TextContext = null;
