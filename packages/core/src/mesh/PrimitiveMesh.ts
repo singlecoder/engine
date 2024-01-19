@@ -112,6 +112,13 @@ export class PrimitiveMesh {
     return mesh;
   }
 
+  static createCircle(engine: Engine, radius: number, segments: number, noLongerAccessible: boolean = true): ModelMesh {
+    const mesh = new ModelMesh(engine);
+    PrimitiveMesh._setCircleData(mesh, radius, segments, noLongerAccessible, false);
+
+    return mesh;
+  }
+
   /**
    * Create a plane mesh.
    * @param engine - Engine
@@ -782,6 +789,65 @@ export class PrimitiveMesh {
       bounds.max.set(halfWidth, halfHeight, halfDepth);
     }
     PrimitiveMesh._initialize(cuboidMesh, vertices, indices, noLongerAccessible, isRestoreMode, restoreVertexBuffer);
+  }
+
+  static _setCircleData(
+    circleMesh: ModelMesh,
+    radius: number,
+    segments: number,
+    noLongerAccessible: boolean,
+    isRestoreMode: boolean,
+    restoreVertexBuffer?: Buffer
+  ): void {
+    segments = Math.max(1, Math.floor(segments));
+    const vertexCount = segments + 1;
+    const vertices = new Float32Array(vertexCount * 8);
+    const thetaStart = Math.PI;
+    const thetaRange = Math.PI * 2;
+    const segmentsReciprocal = 1.0 / segments;
+    let offset = 0;
+    // 圆心点 position
+    vertices[offset++] = 0;
+    vertices[offset++] = 0;
+    vertices[offset++] = 0;
+    // 圆心点 normal
+    vertices[offset++] = 0;
+    vertices[offset++] = 1;
+    vertices[offset++] = 0;
+    // 圆心点 UV
+    vertices[offset++] = 0.5;
+    vertices[offset++] = 0.5;
+    for (let i = 0; i < segments; ++i) {
+      const curTheta = thetaStart + thetaRange * segmentsReciprocal * i;
+      const sinTheta = Math.sin(curTheta);
+      const cosTheta = Math.cos(curTheta);
+      const curX = radius * sinTheta;
+      const curZ = radius * cosTheta;
+      // 圆心点 position
+      vertices[offset++] = curX;
+      vertices[offset++] = 0;
+      vertices[offset++] = curZ;
+      // 圆心点 normal
+      vertices[offset++] = 0;
+      vertices[offset++] = 1;
+      vertices[offset++] = 0;
+      // 圆心点 UV
+      vertices[offset++] = 0.5 + 0.5 * sinTheta;
+      vertices[offset++] = 0.5 + 0.5 * cosTheta;
+    }
+    const indices = PrimitiveMesh._generateIndices(circleMesh.engine, vertexCount, segments * 3);
+    offset = 0;
+    for (let i = 0; i < segments; ++i) {
+      indices[offset++] = 0;
+      indices[offset++] = i + 1;
+      if (i === segments - 1) {
+        indices[offset++] = 1;
+      } else {
+        indices[offset++] = i + 2;
+      }
+    }
+
+    PrimitiveMesh._initialize(circleMesh, vertices, indices, noLongerAccessible, isRestoreMode, restoreVertexBuffer);
   }
 
   /**
