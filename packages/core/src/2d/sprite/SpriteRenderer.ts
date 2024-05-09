@@ -4,7 +4,6 @@ import { RenderContext } from "../../RenderPipeline/RenderContext";
 import { Renderer, RendererUpdateFlags } from "../../Renderer";
 import { assignmentClone, deepClone, ignoreClone } from "../../clone/CloneManager";
 import { ShaderProperty } from "../../shader/ShaderProperty";
-import { CompareFunction } from "../../shader/enums/CompareFunction";
 import { IAssembler } from "../assembler/IAssembler";
 import { SimpleSpriteAssembler } from "../assembler/SimpleSpriteAssembler";
 import { SlicedSpriteAssembler } from "../assembler/SlicedSpriteAssembler";
