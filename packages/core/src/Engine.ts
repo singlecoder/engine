@@ -95,8 +95,6 @@ export class Engine extends EventDispatcher {
   _basicResources: BasicResources;
   /* @internal */
   _spriteDefaultMaterial: Material;
-  /** @internal */
-  _spriteDefaultMaterials: Material[] = [];
   /* @internal */
   _spriteMaskDefaultMaterial: Material;
   /* @internal */
@@ -250,16 +248,7 @@ export class Engine extends EventDispatcher {
 
     this._canvas = canvas;
 
-    const { _spriteDefaultMaterials: spriteDefaultMaterials } = this;
-    this._spriteDefaultMaterial = spriteDefaultMaterials[SpriteMaskInteraction.None] = this._createSpriteMaterial(
-      SpriteMaskInteraction.None
-    );
-    spriteDefaultMaterials[SpriteMaskInteraction.VisibleInsideMask] = this._createSpriteMaterial(
-      SpriteMaskInteraction.VisibleInsideMask
-    );
-    spriteDefaultMaterials[SpriteMaskInteraction.VisibleOutsideMask] = this._createSpriteMaterial(
-      SpriteMaskInteraction.VisibleOutsideMask
-    );
+    this._spriteDefaultMaterial = this._createSpriteMaterial();
     this._spriteMaskDefaultMaterial = this._createSpriteMaskMaterial();
     this._textDefaultFont = Font.createFromOS(this, "Arial");
     this._textDefaultFont.isGCIgnored = true;
@@ -680,7 +669,7 @@ export class Engine extends EventDispatcher {
     return Promise.all(initializePromises).then(() => this);
   }
 
-  private _createSpriteMaterial(maskInteraction: SpriteMaskInteraction): Material {
+  private _createSpriteMaterial(): Material {
     const material = new Material(this, Shader.find("Sprite"));
     const renderState = material.renderState;
     const target = renderState.blendState.targetBlendState;
@@ -690,18 +679,6 @@ export class Engine extends EventDispatcher {
     target.sourceAlphaBlendFactor = BlendFactor.One;
     target.destinationAlphaBlendFactor = BlendFactor.OneMinusSourceAlpha;
     target.colorBlendOperation = target.alphaBlendOperation = BlendOperation.Add;
-    if (maskInteraction !== SpriteMaskInteraction.None) {
-      const stencilState = renderState.stencilState;
-      stencilState.enabled = true;
-      stencilState.writeMask = 0x00;
-      stencilState.referenceValue = 1;
-      const compare =
-        maskInteraction === SpriteMaskInteraction.VisibleInsideMask
-          ? CompareFunction.LessEqual
-          : CompareFunction.Greater;
-      stencilState.compareFunctionFront = compare;
-      stencilState.compareFunctionBack = compare;
-    }
     renderState.depthState.writeEnabled = false;
     renderState.rasterState.cullMode = CullMode.Off;
     renderState.renderQueueType = RenderQueueType.Transparent;

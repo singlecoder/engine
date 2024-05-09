@@ -4,13 +4,15 @@ import { SpriteRenderer } from "../2d/sprite/SpriteRenderer";
 import { Camera } from "../Camera";
 import { DisorderedArray } from "../DisorderedArray";
 import { Engine } from "../Engine";
-import { StencilOperation } from "../shader";
+import { CompareFunction, StencilOperation, StencilState } from "../shader";
 import { SpriteMaskBatcher } from "./batcher/SpriteMaskBatcher";
 
 /**
  * @internal
  */
 export class SpriteMaskManager {
+  private static _tempStencilState: StencilState = new StencilState();
+
   /** @internal */
   _batcher: SpriteMaskBatcher;
   /** @internal */
@@ -33,9 +35,18 @@ export class SpriteMaskManager {
   }
 
   preRender(camera: Camera, renderer: SpriteRenderer): void {
-    if (renderer.maskInteraction === SpriteMaskInteraction.None) {
+    const { maskInteraction } = renderer;
+    if (maskInteraction === SpriteMaskInteraction.None) {
       return;
     }
+
+    const stencilState = renderer.getMaterial().renderState.stencilState;
+    this._copyStencilState(stencilState, SpriteMaskManager._tempStencilState);
+    stencilState.enabled = true;
+    stencilState.writeMask = 0x00;
+    stencilState.referenceValue = 1;
+    stencilState.compareFunctionFront = stencilState.compareFunctionBack =
+      maskInteraction === SpriteMaskInteraction.VisibleInsideMask ? CompareFunction.LessEqual : CompareFunction.Greater;
 
     this._batcher.clear();
     this._processMasksDiff(camera, renderer);
@@ -48,6 +59,7 @@ export class SpriteMaskManager {
     }
 
     this._preMaskLayer = renderer.maskLayer;
+    this._copyStencilState(SpriteMaskManager._tempStencilState, renderer.getMaterial().renderState.stencilState);
   }
 
   destroy(): void {
@@ -86,5 +98,13 @@ export class SpriteMaskManager {
         }
       }
     }
+  }
+
+  private _copyStencilState(scrStencilState: StencilState, dstStencilState: StencilState): void {
+    dstStencilState.enabled = scrStencilState.enabled;
+    dstStencilState.writeMask = scrStencilState.writeMask;
+    dstStencilState.referenceValue = scrStencilState.referenceValue;
+    dstStencilState.compareFunctionFront = scrStencilState.compareFunctionFront;
+    dstStencilState.compareFunctionBack = scrStencilState.compareFunctionBack;
   }
 }
