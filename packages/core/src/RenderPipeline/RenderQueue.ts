@@ -1,4 +1,4 @@
-import { SpriteRenderer } from "../2d";
+import { SpriteRenderer, TextRenderer } from "../2d";
 import { Camera } from "../Camera";
 import { Utils } from "../Utils";
 import { RenderQueueType, Shader, ShaderProperty } from "../shader";
@@ -95,7 +95,7 @@ export class RenderQueue {
       const { usage } = data;
       const needMask = usage === RenderDataUsage.Sprite || usage === RenderDataUsage.Text;
       const renderer = data.component;
-      needMask && spriteMaskManager.preRender(camera, <SpriteRenderer>renderer);
+      needMask && spriteMaskManager.preRender(camera, <SpriteRenderer | TextRenderer>renderer);
 
       const compileMacros = Shader._compileMacros;
       const primitive = data.primitive;
@@ -187,7 +187,7 @@ export class RenderQueue {
 
         rhi.drawPrimitive(primitive, data.subPrimitive, program);
       }
-      needMask && spriteMaskManager.postRender(<SpriteRenderer>renderer);
+      needMask && spriteMaskManager.postRender(<SpriteRenderer | TextRenderer>renderer);
     }
   }
 

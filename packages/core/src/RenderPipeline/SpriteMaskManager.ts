@@ -1,4 +1,4 @@
-import { SpriteMask } from "../2d";
+import { SpriteMask, TextRenderer } from "../2d";
 import { SpriteMaskInteraction } from "../2d/enums/SpriteMaskInteraction";
 import { SpriteRenderer } from "../2d/sprite/SpriteRenderer";
 import { Camera } from "../Camera";
@@ -34,7 +34,7 @@ export class SpriteMaskManager {
     this._batcher.clear();
   }
 
-  preRender(camera: Camera, renderer: SpriteRenderer): void {
+  preRender(camera: Camera, renderer: SpriteRenderer | TextRenderer): void {
     const { maskInteraction } = renderer;
     if (maskInteraction === SpriteMaskInteraction.None) {
       return;
@@ -53,7 +53,7 @@ export class SpriteMaskManager {
     this._batcher.uploadAndDraw(camera);
   }
 
-  postRender(renderer: SpriteRenderer): void {
+  postRender(renderer: SpriteRenderer | TextRenderer): void {
     if (renderer.maskInteraction === SpriteMaskInteraction.None) {
       return;
     }
@@ -68,7 +68,7 @@ export class SpriteMaskManager {
     this._batcher = null;
   }
 
-  private _processMasksDiff(camera: Camera, renderer: SpriteRenderer): void {
+  private _processMasksDiff(camera: Camera, renderer: SpriteRenderer | TextRenderer): void {
     const preMaskLayer = this._preMaskLayer;
     const curMaskLayer = renderer.maskLayer;
     if (preMaskLayer !== curMaskLayer) {
