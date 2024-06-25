@@ -7,6 +7,8 @@ import { RenderContext } from "../RenderPipeline/RenderContext";
 import { RenderElement } from "../RenderPipeline/RenderElement";
 import { Transform } from "../Transform";
 import { assignmentClone, ignoreClone } from "../clone/CloneManager";
+import { CameraClearFlags } from "../enums/CameraClearFlags";
+import { CameraType } from "../enums/CameraType";
 import { RendererType } from "../enums/RendererType";
 import { HitResult } from "../physics";
 import { UIRenderer } from "./UIRenderer";
@@ -22,6 +24,9 @@ export class UICanvas extends Component {
   /** @internal */
   @ignoreClone
   _renderElement = new RenderElement();
+  /** @internal */
+  @ignoreClone
+  _overlayCamera: Camera;
 
   @assignmentClone
   private _priority: number = 0;
@@ -170,6 +175,7 @@ export class UICanvas extends Component {
   set sortOrder(val: number) {
     if (this._sortOrder !== val) {
       this._sortOrder = val;
+      this._overlayCamera.priority = (1 << 16) + val;
     }
   }
 
@@ -199,6 +205,10 @@ export class UICanvas extends Component {
     this._onReferenceResolutionChanged = this._onReferenceResolutionChanged.bind(this);
     // @ts-ignore
     this._referenceResolution._onValueChanged = this._onReferenceResolutionChanged;
+    const overlayCamera = (this._overlayCamera = new Camera(entity));
+    overlayCamera.isOrthographic = true;
+    overlayCamera.clearFlags = CameraClearFlags.None;
+    overlayCamera._cameraType = CameraType.UIOverlay;
   }
 
   _prepareRender(context: RenderContext): void {
@@ -220,6 +230,8 @@ export class UICanvas extends Component {
     this._entity._updateFlagManager.addListener(this._onEntityListener);
     this._addParentListener();
     this._setIsRootCanvas(this._checkIsRootCanvas());
+    // TODO
+    this.scene._componentsManager.addCamera(this._overlayCamera);
   }
 
   /**
@@ -229,6 +241,8 @@ export class UICanvas extends Component {
     this._entity._updateFlagManager.removeListener(this._onEntityListener);
     this._removeParentListener();
     this._setIsRootCanvas(false);
+    // TODO
+    this.scene._componentsManager.removeCamera(this._overlayCamera);
   }
 
   /**
@@ -271,15 +285,15 @@ export class UICanvas extends Component {
     const { x: width, y: height } = this._referenceResolution;
     let curWidth: number;
     let curHeight: number;
-    if (renderCamera) {
+    if (this._renderMode === CanvasRenderMode.ScreenSpaceCamera && renderCamera) {
       curHeight = renderCamera.isOrthographic
         ? renderCamera.orthographicSize * 2
         : 2 * (Math.tan(MathUtil.degreeToRadian(renderCamera.fieldOfView / 2)) * this._distance);
       curWidth = renderCamera.aspectRatio * curHeight;
     } else {
-      const canvas = this.engine.canvas;
-      curHeight = canvas.height;
-      curWidth = canvas.width;
+      const overlayCamera = this._overlayCamera;
+      curHeight = overlayCamera.orthographicSize * 2;
+      curWidth = overlayCamera.aspectRatio * curHeight;
     }
     let expectX: number, expectY: number, expectZ: number;
     switch (this._resolutionAdaptationStrategy) {
