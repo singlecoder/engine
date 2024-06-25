@@ -4,8 +4,10 @@ import { Component } from "../Component";
 import { DependentMode, dependentComponents } from "../ComponentsDependencies";
 import { Entity, EntityModifyFlags } from "../Entity";
 import { RenderContext } from "../RenderPipeline/RenderContext";
+import { RenderElement } from "../RenderPipeline/RenderElement";
 import { Transform } from "../Transform";
-import { ignoreClone } from "../clone/CloneManager";
+import { assignmentClone, ignoreClone } from "../clone/CloneManager";
+import { RendererType } from "../enums/RendererType";
 import { HitResult } from "../physics";
 import { UIRenderer } from "./UIRenderer";
 import { UITransform } from "./UITransform";
@@ -17,20 +19,36 @@ export class UICanvas extends Component {
   /** @internal */
   @ignoreClone
   _uiCanvasIndex: number = -1;
+  /** @internal */
+  @ignoreClone
+  _renderElement = new RenderElement();
 
-  private _renderMode: CanvasRenderMode = CanvasRenderMode.ScreenSpaceOverlay;
+  @assignmentClone
+  private _priority: number = 0;
+  private _renderMode = CanvasRenderMode.ScreenSpaceOverlay;
   private _renderCamera: Camera;
-  private _resolutionAdaptationStrategy: ResolutionAdaptationStrategy = ResolutionAdaptationStrategy.BothAdaptation;
+  private _resolutionAdaptationStrategy = ResolutionAdaptationStrategy.BothAdaptation;
   private _sortOrder: number = 0;
   private _distance: number = 10;
-  private _renderers: UIRenderer[] = [];
+  private _renderers = Array<UIRenderer>();
   private _transform: Transform;
   private _uiTransform: UITransform;
-  private _referenceResolution: Vector2 = new Vector2(800, 600);
-  private _isRootCanvas: boolean = false;
-  private _enableBlocked: boolean = true;
-  private _parents: Entity[] = [];
-  private _hierarchyDirty: boolean = true;
+  private _referenceResolution = new Vector2(800, 600);
+  private _isRootCanvas = false;
+  private _enableBlocked = true;
+  private _parents = Array<Entity>();
+  private _hierarchyDirty = true;
+
+  /**
+   * The rendering priority of all renderers under the canvas, lower values are rendered first and higher values are rendered last.
+   */
+  get priority(): number {
+    return this._priority;
+  }
+
+  set priority(value: number) {
+    this._priority = value;
+  }
 
   /** @internal */
   get renderers(): UIRenderer[] {
@@ -83,6 +101,7 @@ export class UICanvas extends Component {
             // @ts-ignore
             this._referenceResolution._onValueChanged = null;
           }
+
           if (mode === CanvasRenderMode.ScreenSpaceCamera) {
             this._addCameraListener(camera);
             // @ts-ignore
@@ -92,6 +111,7 @@ export class UICanvas extends Component {
             // @ts-ignore
             this._referenceResolution._onValueChanged = this._onReferenceResolutionChanged;
           }
+
           this._adapterPoseInScreenSpace();
           this._adapterSizeInScreenSpace();
           const { _componentsManager: componentsManager } = this.scene;
@@ -182,15 +202,15 @@ export class UICanvas extends Component {
   }
 
   _prepareRender(context: RenderContext): void {
-    const { renderers } = this;
+    const { renderers, _renderElement: renderElement } = this;
     const { frameCount } = this.engine.time;
-    const distanceForSort = this._distance;
+    renderElement.set(this._priority, this._distance);
     for (let i = 0, n = renderers.length; i < n; i++) {
       const renderer = renderers[i];
-      renderer._distanceForSort = distanceForSort;
       renderer._renderFrameCount = frameCount;
       renderer._prepareRender(context);
     }
+    context.camera._renderPipeline.pushRenderElement(context, renderElement);
   }
 
   /**
@@ -294,7 +314,11 @@ export class UICanvas extends Component {
       const { _components: components } = child;
       for (let j = 0, m = components.length; j < m; j++) {
         const component = components[j];
-        component instanceof UIRenderer && out.push(component);
+        // @ts-ignore
+        if (component._rendererType === RendererType.UI) {
+          out.push(<UIRenderer>component);
+          (<UIRenderer>component)._uiCanvas = this;
+        }
       }
       this._walk(child, out);
     }

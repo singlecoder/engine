@@ -94,7 +94,7 @@ export class ComponentsManager {
   sortUICanvases(): void {
     const { _uiCanvasSortingFlag: uiCanvasSortingFlag, _uiCanvasesArray: uiCanvasesArray } = this;
     if (uiCanvasSortingFlag & (1 << CanvasRenderMode.ScreenSpaceOverlay)) {
-      uiCanvasesArray[CanvasRenderMode.ScreenSpaceOverlay].sort((a, b) => a.sortOrder - b.sortOrder);
+      uiCanvasesArray[CanvasRenderMode.ScreenSpaceOverlay].sort((a, b) => b.sortOrder - a.sortOrder);
     }
     if (uiCanvasSortingFlag & (1 << CanvasRenderMode.ScreenSpaceCamera)) {
       uiCanvasesArray[CanvasRenderMode.ScreenSpaceCamera].sort((a, b) => b.distance - a.distance);

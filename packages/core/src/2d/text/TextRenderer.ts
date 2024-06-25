@@ -9,6 +9,7 @@ import { SubRenderElement } from "../../RenderPipeline/SubRenderElement";
 import { Renderer } from "../../Renderer";
 import { TransformModifyFlags } from "../../Transform";
 import { assignmentClone, deepClone, ignoreClone } from "../../clone/CloneManager";
+import { RendererType } from "../../enums/RendererType";
 import { ShaderData, ShaderProperty } from "../../shader";
 import { CompareFunction } from "../../shader/enums/CompareFunction";
 import { ShaderDataGroup } from "../../shader/enums/ShaderDataGroup";
@@ -290,6 +291,7 @@ export class TextRenderer extends Renderer {
 
   constructor(entity: Entity) {
     super(entity);
+    this._rendererType = RendererType.Text;
     this._init();
   }
 

@@ -182,21 +182,15 @@ export class Image extends UIRenderer {
     // Update color
     if (this._dirtyUpdateFlag & ImageUpdateFlags.Color) {
       this._assembler.updateColor(this);
-      this._dirtyUpdateFlag &= ~ImageUpdateFlags.Color;
     }
 
-    // Push primitive
-    const camera = context.camera;
-    const { engine } = camera;
-
-    // Push primitive
-    const renderElement = engine._renderElementPool.get();
-    renderElement.set(this.priority, this._distanceForSort);
+    // Init sub render element.
+    const { engine } = context.camera;
+    const renderElement = this.uiCanvas._renderElement;
     const subRenderElement = engine._subRenderElementPool.get();
     const subChunk = this._subChunk;
     subRenderElement.set(this, material, subChunk.chunk.primitive, subChunk.subMesh, this.sprite.texture, subChunk);
     renderElement.addSubRenderElement(subRenderElement);
-    camera._renderPipeline.pushRenderElement(context, renderElement);
   }
 
   /**

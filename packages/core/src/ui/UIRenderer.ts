@@ -5,15 +5,26 @@ import { Entity } from "../Entity";
 import { PrimitiveChunkManager } from "../RenderPipeline/PrimitiveChunkManager";
 import { RenderContext } from "../RenderPipeline/RenderContext";
 import { Renderer } from "../Renderer";
+import { ignoreClone } from "../clone/CloneManager";
+import { RendererType } from "../enums/RendererType";
 import { ShaderMacroCollection } from "../shader/ShaderMacroCollection";
+import { UICanvas } from "./UICanvas";
 import { UITransform, UITransformModifyFlags } from "./UITransform";
 
 @dependentComponents(UITransform, DependentMode.AutoAdd)
 export class UIRenderer extends Renderer {
+  /** @internal */
+  @ignoreClone
+  _uiCanvas: UICanvas;
+
   protected _uiTransform: UITransform;
   protected _localBounds: BoundingBox = new BoundingBox();
   protected _rayCastTarget: boolean = true;
   protected _rayCastPadding: Vector4 = new Vector4(0, 0, 0, 0);
+
+  get uiCanvas(): UICanvas {
+    return this._uiCanvas;
+  }
 
   get rayCastTarget(): boolean {
     return this._rayCastTarget;
@@ -38,6 +49,7 @@ export class UIRenderer extends Renderer {
    */
   constructor(entity: Entity) {
     super(entity);
+    this._rendererType = RendererType.UI;
     this._uiTransform = entity.getComponent(UITransform);
   }
 
@@ -103,7 +115,7 @@ export class UIRenderer extends Renderer {
    * @internal
    */
   _getChunkManager(): PrimitiveChunkManager {
-    return this.engine._batcherManager.primitiveChunkManager2D;
+    return this.engine._batcherManager.primitiveChunkManagerUI;
   }
 
   protected _onUITransformChanged(flag: UITransformModifyFlags): void {}
