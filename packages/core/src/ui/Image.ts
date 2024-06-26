@@ -8,7 +8,6 @@ import { SpriteModifyFlags } from "../2d/enums/SpriteModifyFlags";
 import { Entity } from "../Entity";
 import { BatchUtils } from "../RenderPipeline/BatchUtils";
 import { RenderContext } from "../RenderPipeline/RenderContext";
-import { SubPrimitiveChunk } from "../RenderPipeline/SubPrimitiveChunk";
 import { SubRenderElement } from "../RenderPipeline/SubRenderElement";
 import { RendererUpdateFlags } from "../Renderer";
 import { assignmentClone, deepClone, ignoreClone } from "../clone/CloneManager";
@@ -30,9 +29,6 @@ export class Image extends UIRenderer {
   private _tileMode: SpriteTileMode = SpriteTileMode.Continuous;
   @assignmentClone
   private _tiledAdaptiveThreshold: number = 0.5;
-  /** @internal */
-  @ignoreClone
-  _subChunk: SubPrimitiveChunk;
 
   /**
    * The draw mode of the sprite renderer.
@@ -220,10 +216,6 @@ export class Image extends UIRenderer {
     this._color = null;
     this._sprite = null;
     this._assembler = null;
-    if (this._subChunk) {
-      this._getChunkManager().freeSubChunk(this._subChunk);
-      this._subChunk = null;
-    }
   }
 
   @ignoreClone

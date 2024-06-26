@@ -4,6 +4,7 @@ import { DependentMode, dependentComponents } from "../ComponentsDependencies";
 import { Entity } from "../Entity";
 import { PrimitiveChunkManager } from "../RenderPipeline/PrimitiveChunkManager";
 import { RenderContext } from "../RenderPipeline/RenderContext";
+import { SubPrimitiveChunk } from "../RenderPipeline/SubPrimitiveChunk";
 import { Renderer } from "../Renderer";
 import { ignoreClone } from "../clone/CloneManager";
 import { RendererType } from "../enums/RendererType";
@@ -16,6 +17,9 @@ export class UIRenderer extends Renderer {
   /** @internal */
   @ignoreClone
   _uiCanvas: UICanvas;
+  /** @internal */
+  @ignoreClone
+  _subChunk: SubPrimitiveChunk;
 
   protected _uiTransform: UITransform;
   protected _localBounds: BoundingBox = new BoundingBox();
@@ -119,4 +123,13 @@ export class UIRenderer extends Renderer {
   }
 
   protected _onUITransformChanged(flag: UITransformModifyFlags): void {}
+
+  protected override _onDestroy(): void {
+    if (this._subChunk) {
+      this._getChunkManager().freeSubChunk(this._subChunk);
+      this._subChunk = null;
+    }
+
+    super._onDestroy();
+  }
 }
