@@ -2,7 +2,7 @@ import { MathUtil, Matrix, Vector2 } from "@galacean/engine-math";
 import { DisorderedArray } from "../../DisorderedArray";
 import { Logger } from "../../base";
 import { StaticInterfaceImplement } from "../../base/StaticInterfaceImplement";
-import { Image } from "../../ui";
+import { UIImage } from "../../ui";
 import { SpriteTileMode } from "../enums/SpriteTileMode";
 import { Sprite } from "../sprite";
 import { SpriteRenderer } from "../sprite/SpriteRenderer";
@@ -19,7 +19,7 @@ export class TiledSpriteAssembler {
   static _uvRow = new DisorderedArray<number>();
   static _uvColumn = new DisorderedArray<number>();
 
-  static resetData(renderer: SpriteRenderer | Image, vertexCount: number): void {
+  static resetData(renderer: SpriteRenderer | UIImage, vertexCount: number): void {
     if (vertexCount) {
       const manager = renderer._getChunkManager();
       const lastSubChunk = renderer._subChunk;
@@ -35,7 +35,7 @@ export class TiledSpriteAssembler {
   }
 
   static updatePositions(
-    renderer: SpriteRenderer | Image,
+    renderer: SpriteRenderer | UIImage,
     width: number,
     height: number,
     pivot: Vector2,

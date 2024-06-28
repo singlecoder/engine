@@ -14,7 +14,7 @@ import { assignmentClone, deepClone, ignoreClone } from "../clone/CloneManager";
 import { ShaderProperty } from "../shader";
 import { UIRenderer } from "./UIRenderer";
 
-export class Image extends UIRenderer {
+export class UIImage extends UIRenderer {
   /** @internal */
   static _textureProperty: ShaderProperty = ShaderProperty.getByName("renderer_SpriteTexture");
   @deepClone

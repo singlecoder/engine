@@ -1,6 +1,6 @@
 import { BoundingBox, Matrix, Vector2 } from "@galacean/engine-math";
 import { StaticInterfaceImplement } from "../../base/StaticInterfaceImplement";
-import { Image } from "../../ui";
+import { UIImage } from "../../ui";
 import { SpriteMask } from "../sprite";
 import { SpriteRenderer } from "../sprite/SpriteRenderer";
 import { ISpriteAssembler } from "./ISpriteAssembler";
@@ -13,7 +13,7 @@ export class SimpleSpriteAssembler {
   static _rectangleTriangles = [0, 1, 2, 2, 1, 3];
   static _worldMatrix = new Matrix();
 
-  static resetData(renderer: SpriteRenderer | SpriteMask | Image): void {
+  static resetData(renderer: SpriteRenderer | SpriteMask | UIImage): void {
     const manager = renderer._getChunkManager();
     const lastSubChunk = renderer._subChunk;
     lastSubChunk && manager.freeSubChunk(lastSubChunk);
@@ -23,7 +23,7 @@ export class SimpleSpriteAssembler {
   }
 
   static updatePositions(
-    renderer: SpriteRenderer | SpriteMask | Image,
+    renderer: SpriteRenderer | SpriteMask | UIImage,
     width: number,
     height: number,
     pivot: Vector2,
