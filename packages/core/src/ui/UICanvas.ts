@@ -11,6 +11,7 @@ import { CameraClearFlags } from "../enums/CameraClearFlags";
 import { CameraType } from "../enums/CameraType";
 import { RendererType } from "../enums/RendererType";
 import { HitResult } from "../physics";
+import { CanvasGroup } from "./CanvasGroup";
 import { UIRenderer } from "./UIRenderer";
 import { UITransform } from "./UITransform";
 import { CanvasRenderMode } from "./enums/CanvasRenderMode";
@@ -42,7 +43,7 @@ export class UICanvas extends Component {
   private _isRootCanvas = false;
   private _enableBlocked = true;
   private _parents = Array<Entity>();
-  private _hierarchyDirty = true;
+  // private _hierarchyDirty = true;
 
   /**
    * The rendering priority of all renderers under the canvas, lower values are rendered first and higher values are rendered last.
@@ -57,11 +58,13 @@ export class UICanvas extends Component {
 
   /** @internal */
   get renderers(): UIRenderer[] {
-    if (this._hierarchyDirty) {
-      this._renderers.length = 0;
-      this._walk(this.entity, this._renderers);
-      // this._canvasHierarchyDirty = false;
-    }
+    // if (this._hierarchyDirty) {
+    this._renderers.length = 0;
+    const canvasGroup = this.entity.getComponent(CanvasGroup);
+    const groupAlpha = canvasGroup ? canvasGroup.groupAlpha : 1;
+    this._walk(this.entity, this._renderers, groupAlpha);
+    // this._canvasHierarchyDirty = false;
+    // }
     return this._renderers;
   }
 
@@ -321,20 +324,24 @@ export class UICanvas extends Component {
     this._uiTransform.rect.set(curWidth / expectX, curHeight / expectY);
   }
 
-  private _walk(entity: Entity, out: UIRenderer[]): void {
+  private _walk(entity: Entity, out: UIRenderer[], groupAlpha: number = 1): void {
     const { _children: children } = entity;
     for (let i = 0, n = children.length; i < n; i++) {
       const child = children[i];
+      const canvasGroup = child.getComponent(CanvasGroup);
+      const newGroupAlpha = groupAlpha * (canvasGroup ? canvasGroup.groupAlpha : 1);
       const { _components: components } = child;
       for (let j = 0, m = components.length; j < m; j++) {
         const component = components[j];
         // @ts-ignore
         if (component._rendererType === RendererType.UI) {
-          out.push(<UIRenderer>component);
-          (<UIRenderer>component)._uiCanvas = this;
+          const uiRenderer = <UIRenderer>component;
+          out.push(uiRenderer);
+          uiRenderer._uiCanvas = this;
+          uiRenderer.groupAlpha = newGroupAlpha;
         }
       }
-      this._walk(child, out);
+      this._walk(child, out, newGroupAlpha);
     }
   }
 

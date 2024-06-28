@@ -1,3 +1,4 @@
+export { CanvasGroup } from "./CanvasGroup";
 export { CanvasRenderMode } from "./enums/CanvasRenderMode";
 export { ResolutionAdaptationStrategy } from "./enums/ResolutionAdaptationStrategy";
 

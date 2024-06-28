@@ -1,5 +1,5 @@
 import { Color, MathUtil } from "@galacean/engine-math";
-import { Sprite, SpriteDrawMode, SpriteRenderer, SpriteTileMode } from "../2d";
+import { Sprite, SpriteDrawMode, SpriteTileMode } from "../2d";
 import { ISpriteAssembler } from "../2d/assembler/ISpriteAssembler";
 import { SimpleSpriteAssembler } from "../2d/assembler/SimpleSpriteAssembler";
 import { SlicedSpriteAssembler } from "../2d/assembler/SlicedSpriteAssembler";
@@ -11,12 +11,9 @@ import { RenderContext } from "../RenderPipeline/RenderContext";
 import { SubRenderElement } from "../RenderPipeline/SubRenderElement";
 import { RendererUpdateFlags } from "../Renderer";
 import { assignmentClone, deepClone, ignoreClone } from "../clone/CloneManager";
-import { ShaderProperty } from "../shader";
-import { UIRenderer } from "./UIRenderer";
+import { UIRenderer, UIRendererUpdateFlags } from "./UIRenderer";
 
 export class UIImage extends UIRenderer {
-  /** @internal */
-  static _textureProperty: ShaderProperty = ShaderProperty.getByName("renderer_SpriteTexture");
   @deepClone
   private _color: Color = new Color(1, 1, 1, 1);
   @ignoreClone
@@ -109,9 +106,9 @@ export class UIImage extends UIRenderer {
       if (value) {
         this._addResourceReferCount(value, 1);
         value._updateFlagManager.addListener(this._onSpriteChange);
-        this.shaderData.setTexture(SpriteRenderer._textureProperty, value.texture);
+        this.shaderData.setTexture(UIRenderer._textureProperty, value.texture);
       } else {
-        this.shaderData.setTexture(SpriteRenderer._textureProperty, null);
+        this.shaderData.setTexture(UIRenderer._textureProperty, null);
       }
       this._sprite = value;
     }
@@ -127,7 +124,7 @@ export class UIImage extends UIRenderer {
   set color(value: Color) {
     if (this._color !== value) {
       this._color.copyFrom(value);
-      this._dirtyUpdateFlag |= ImageUpdateFlags.Color;
+      this._dirtyUpdateFlag |= ImageUpdateFlags.VertexColor;
     }
   }
 
@@ -138,8 +135,8 @@ export class UIImage extends UIRenderer {
     super(entity);
 
     this.drawMode = SpriteDrawMode.Simple;
-    this._dirtyUpdateFlag |= ImageUpdateFlags.Color;
-    this.setMaterial(this._engine._spriteDefaultMaterial);
+    this._dirtyUpdateFlag |= ImageUpdateFlags.VertexColor;
+    this.setMaterial(this._engine._uiDefaultMaterial);
     this._onSpriteChange = this._onSpriteChange.bind(this);
   }
 
@@ -177,7 +174,8 @@ export class UIImage extends UIRenderer {
 
     // Update color
     if (this._dirtyUpdateFlag & ImageUpdateFlags.Color) {
-      this._assembler.updateColor(this);
+      this._assembler.updateColor(this, this._groupAlpha);
+      this._dirtyUpdateFlag &= ~ImageUpdateFlags.Color;
     }
 
     // Init sub render element.
@@ -222,7 +220,7 @@ export class UIImage extends UIRenderer {
   private _onSpriteChange(type: SpriteModifyFlags): void {
     switch (type) {
       case SpriteModifyFlags.texture:
-        this.shaderData.setTexture(SpriteRenderer._textureProperty, this.sprite.texture);
+        this.shaderData.setTexture(UIRenderer._textureProperty, this.sprite.texture);
         break;
       case SpriteModifyFlags.size:
         const { _drawMode: drawMode } = this;
@@ -267,10 +265,13 @@ enum ImageUpdateFlags {
   UV = 0x2,
   /** Position and UV. */
   PositionAndUV = 0x3,
-  /** Color. */
-  Color = 0x4,
+  /** Vertex Color. */
+  VertexColor = 0x4,
   /** Vertex data. */
   VertexData = 0x7,
+
+  /** Vertex Color and Group Color. */
+  Color = ImageUpdateFlags.VertexColor | UIRendererUpdateFlags.GroupColor,
   /** All. */
-  All = 0x7
+  All = 0x7 | UIRendererUpdateFlags.GroupColor
 }

@@ -6,8 +6,9 @@ import { PrimitiveChunkManager } from "../RenderPipeline/PrimitiveChunkManager";
 import { RenderContext } from "../RenderPipeline/RenderContext";
 import { SubPrimitiveChunk } from "../RenderPipeline/SubPrimitiveChunk";
 import { Renderer } from "../Renderer";
-import { ignoreClone } from "../clone/CloneManager";
+import { assignmentClone, ignoreClone } from "../clone/CloneManager";
 import { RendererType } from "../enums/RendererType";
+import { ShaderProperty } from "../shader";
 import { ShaderMacroCollection } from "../shader/ShaderMacroCollection";
 import { UICanvas } from "./UICanvas";
 import { UITransform, UITransformModifyFlags } from "./UITransform";
@@ -15,11 +16,16 @@ import { UITransform, UITransformModifyFlags } from "./UITransform";
 @dependentComponents(UITransform, DependentMode.AutoAdd)
 export class UIRenderer extends Renderer {
   /** @internal */
+  static _textureProperty: ShaderProperty = ShaderProperty.getByName("renderer_UITexture");
+  /** @internal */
   @ignoreClone
   _uiCanvas: UICanvas;
   /** @internal */
   @ignoreClone
   _subChunk: SubPrimitiveChunk;
+  /** @internal */
+  @assignmentClone
+  _groupAlpha = 1;
 
   protected _uiTransform: UITransform;
   protected _localBounds: BoundingBox = new BoundingBox();
@@ -45,6 +51,14 @@ export class UIRenderer extends Renderer {
   set rayCastPadding(value: Vector4) {
     if (this._rayCastPadding !== value) {
       this._rayCastPadding.copyFrom(value);
+    }
+  }
+
+  /** @internal */
+  set groupAlpha(val: number) {
+    if (this._groupAlpha !== val) {
+      this._groupAlpha = val;
+      this._dirtyUpdateFlag |= UIRendererUpdateFlags.GroupColor;
     }
   }
 
@@ -132,4 +146,11 @@ export class UIRenderer extends Renderer {
 
     super._onDestroy();
   }
+}
+
+/**
+ * @remarks Extends `RendererUpdateFlag`.
+ */
+export enum UIRendererUpdateFlags {
+  GroupColor = 0x8
 }
