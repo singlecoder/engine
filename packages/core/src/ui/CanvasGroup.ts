@@ -8,7 +8,7 @@ export class CanvasGroup extends Component {
 
   set groupAlpha(val: number) {
     if (this._groupAlpha !== val) {
-      this._groupAlpha = val;
+      this._groupAlpha = Math.max(0, Math.min(val, 1));
     }
   }
 
