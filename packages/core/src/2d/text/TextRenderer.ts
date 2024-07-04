@@ -9,7 +9,6 @@ import { SubRenderElement } from "../../RenderPipeline/SubRenderElement";
 import { Renderer } from "../../Renderer";
 import { TransformModifyFlags } from "../../Transform";
 import { assignmentClone, deepClone, ignoreClone } from "../../clone/CloneManager";
-import { RendererType } from "../../enums/RendererType";
 import { ShaderData, ShaderProperty } from "../../shader";
 import { CompareFunction } from "../../shader/enums/CompareFunction";
 import { ShaderDataGroup } from "../../shader/enums/ShaderDataGroup";
@@ -291,18 +290,13 @@ export class TextRenderer extends Renderer {
 
   constructor(entity: Entity) {
     super(entity);
-    this._rendererType = RendererType.Text;
-    this._init();
-  }
 
-  /**
-   * @internal
-   */
-  _init(): void {
     const { engine } = this;
     this._font = engine._textDefaultFont;
     this._addResourceReferCount(this._font, 1);
     this.setMaterial(engine._textDefaultMaterial);
+    //@ts-ignore
+    this._color._onValueChanged = this._onColorChanged.bind(this);
   }
 
   /**
@@ -420,6 +414,11 @@ export class TextRenderer extends Renderer {
       this._setDirtyFlagFalse(DirtyFlag.WorldPosition);
     }
 
+    if (this._isContainDirtyFlag(DirtyFlag.Color)) {
+      this._updateColor();
+      this._setDirtyFlagFalse(DirtyFlag.Color);
+    }
+
     const camera = context.camera;
     const engine = camera.engine;
     const textSubRenderElementPool = engine._textSubRenderElementPool;
@@ -518,6 +517,23 @@ export class TextRenderer extends Renderer {
         for (let k = 0, o = subChunk.vertexArea.start + charRenderInfo.indexInChunk * 36; k < 4; ++k, o += 9) {
           worldPositions[k].copyToArray(vertices, o);
         }
+      }
+    }
+  }
+
+  private _updateColor(): void {
+    const { r, g, b, a } = this._color;
+    const textChunks = this._textChunks;
+    for (let i = 0, n = textChunks.length; i < n; ++i) {
+      const subChunk = textChunks[i].subChunk;
+      const vertexArea = subChunk.vertexArea;
+      const vertexCount = vertexArea.size / 9;
+      const vertices = subChunk.chunk.vertices;
+      for (let j = 0, o = vertexArea.start + 5; j < vertexCount; ++j, o += 9) {
+        vertices[o] = r;
+        vertices[o + 1] = g;
+        vertices[o + 2] = b;
+        vertices[o + 3] = a;
       }
     }
   }
@@ -728,6 +744,11 @@ export class TextRenderer extends Renderer {
     }
     textChunks.length = 0;
   }
+
+  @ignoreClone
+  private _onColorChanged(): void {
+    this._setDirtyFlagTrue(DirtyFlag.Color);
+  }
 }
 
 class TextChunk {
@@ -742,6 +763,7 @@ enum DirtyFlag {
   WorldPosition = 0x4,
   WorldBounds = 0x8,
   MaskInteraction = 0x10,
+  Color = 0x20,
 
   Position = LocalPositionBounds | WorldPosition | WorldBounds,
   Font = SubFont | Position
