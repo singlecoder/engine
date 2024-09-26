@@ -27,6 +27,7 @@ export class SpriteMask extends Renderer {
   /** @internal */
   static _alphaCutoffProperty: ShaderProperty = ShaderProperty.getByName("renderer_MaskAlphaCutoff");
 
+  /** @internal */
   static _createSpriteMaskMaterial(engine: Engine): Material {
     const material = new Material(engine, Shader.find("SpriteMask"));
     const renderState = material.renderState;

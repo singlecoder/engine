@@ -27,6 +27,7 @@ export class SpriteRenderer extends Renderer {
   /** @internal */
   static _textureProperty: ShaderProperty = ShaderProperty.getByName("renderer_SpriteTexture");
 
+  /** @internal */
   static _createSpriteMaterial(engine): Material {
     const material = new Material(engine, Shader.find("Sprite"));
     const renderState = material.renderState;
