@@ -45,6 +45,7 @@ import { Texture2D, TextureFormat } from "./texture";
 import { ClearableObjectPool } from "./utils/ClearableObjectPool";
 import { ReturnableObjectPool } from "./utils/ReturnableObjectPool";
 import { XRManager } from "./xr/XRManager";
+import { SpriteMask, SpriteRenderer, TextRenderer } from "./2d";
 
 ShaderPool.init();
 
@@ -235,9 +236,9 @@ export class Engine extends EventDispatcher {
 
     this._canvas = canvas;
 
-    this._spriteDefaultMaterial = this._createSpriteMaterial();
-    this._textDefaultMaterial = this._createTextMaterial();
-    this._spriteMaskDefaultMaterial = this._createSpriteMaskMaterial();
+    this._spriteDefaultMaterial = SpriteRenderer._createSpriteMaterial(this);
+    this._textDefaultMaterial = TextRenderer._createTextMaterial(this);
+    this._spriteMaskDefaultMaterial = SpriteMask._createSpriteMaskMaterial(this);
     this._textDefaultFont = Font.createFromOS(this, "Arial");
     this._textDefaultFont.isGCIgnored = true;
 
@@ -566,51 +567,6 @@ export class Engine extends EventDispatcher {
       if (loader.initialize) initializePromises.push(loader.initialize(this, configuration));
     }
     return Promise.all(initializePromises).then(() => this);
-  }
-
-  private _createSpriteMaterial(): Material {
-    const material = new Material(this, Shader.find("Sprite"));
-    const renderState = material.renderState;
-    const target = renderState.blendState.targetBlendState;
-    target.enabled = true;
-    target.sourceColorBlendFactor = BlendFactor.SourceAlpha;
-    target.destinationColorBlendFactor = BlendFactor.OneMinusSourceAlpha;
-    target.sourceAlphaBlendFactor = BlendFactor.One;
-    target.destinationAlphaBlendFactor = BlendFactor.OneMinusSourceAlpha;
-    target.colorBlendOperation = target.alphaBlendOperation = BlendOperation.Add;
-    renderState.depthState.writeEnabled = false;
-    renderState.rasterState.cullMode = CullMode.Off;
-    renderState.renderQueueType = RenderQueueType.Transparent;
-    material.isGCIgnored = true;
-    return material;
-  }
-
-  private _createSpriteMaskMaterial(): Material {
-    const material = new Material(this, Shader.find("SpriteMask"));
-    const renderState = material.renderState;
-    renderState.blendState.targetBlendState.colorWriteMask = ColorWriteMask.None;
-    renderState.rasterState.cullMode = CullMode.Off;
-    renderState.stencilState.enabled = true;
-    renderState.depthState.enabled = false;
-    material.isGCIgnored = true;
-    return material;
-  }
-
-  private _createTextMaterial(): Material {
-    const material = new Material(this, Shader.find("Text"));
-    const renderState = material.renderState;
-    const target = renderState.blendState.targetBlendState;
-    target.enabled = true;
-    target.sourceColorBlendFactor = BlendFactor.SourceAlpha;
-    target.destinationColorBlendFactor = BlendFactor.OneMinusSourceAlpha;
-    target.sourceAlphaBlendFactor = BlendFactor.One;
-    target.destinationAlphaBlendFactor = BlendFactor.OneMinusSourceAlpha;
-    target.colorBlendOperation = target.alphaBlendOperation = BlendOperation.Add;
-    renderState.depthState.writeEnabled = false;
-    renderState.rasterState.cullMode = CullMode.Off;
-    renderState.renderQueueType = RenderQueueType.Transparent;
-    material.isGCIgnored = true;
-    return material;
   }
 
   private _onDeviceLost(): void {
